@@ -1,0 +1,263 @@
+{
+  "oracle": "webgpu-research/lab/browser/deck-pgm/src/timesampler/",
+  "module": "reducer.ts",
+  "version": 1,
+  "cases": [
+    {
+      "name": "pong-initial",
+      "input": {
+        "previousState": null,
+        "transport": {
+          "transportSeconds": 0,
+          "audioOutputTimeSeconds": 0,
+          "performanceTimeSeconds": 0,
+          "playing": true,
+          "discontinuityGeneration": 0,
+          "beatPosition": 0,
+          "beatPhase": 0,
+          "beatIntervalSeconds": 0.5,
+          "presentationTimeSeconds": 0
+        },
+        "triggers": [],
+        "params": {
+          "sourceDurationSeconds": 8,
+          "sliceCount": 3,
+          "mode": "PONG",
+          "jumpSizeBeats": 1,
+          "loopCount": 1,
+          "playbackRate": 1,
+          "accentMode": "OFF",
+          "randomSeed": 305419896,
+          "feel": 0
+        }
+      },
+      "expected": {
+        "output": {
+          "activeSlice": 0,
+          "effectiveSliceCount": 3,
+          "sourceTimestampSeconds": 0,
+          "targetPlaybackRate": 1,
+          "jumpGeneration": 0,
+          "jumpReason": "initial",
+          "mode": "PONG",
+          "loopIteration": 1,
+          "loopCount": 1
+        },
+        "nextState": {
+          "activeSlice": 0,
+          "pongDirection": 1,
+          "loopIteration": 1,
+          "jumpGeneration": 0,
+          "nextBoundaryBeat": 1,
+          "sliceStartedBeat": 0,
+          "sourceAnchorTransportSeconds": 0,
+          "sourceAnchorOffsetSeconds": 0,
+          "mode": "PONG",
+          "loopCount": 1,
+          "pendingTrigger": null
+        }
+      }
+    },
+    {
+      "name": "pong-boundary-1",
+      "input": {
+        "previousState": {
+          "activeSlice": 0,
+          "pongDirection": 1,
+          "loopIteration": 1,
+          "jumpGeneration": 0,
+          "nextBoundaryBeat": 1,
+          "sliceStartedBeat": 0,
+          "sourceAnchorTransportSeconds": 0,
+          "sourceAnchorOffsetSeconds": 0,
+          "mode": "PONG",
+          "loopCount": 1,
+          "pendingTrigger": null
+        },
+        "transport": {
+          "transportSeconds": 0.5,
+          "audioOutputTimeSeconds": 0,
+          "performanceTimeSeconds": 0,
+          "playing": true,
+          "discontinuityGeneration": 0,
+          "beatPosition": 1,
+          "beatPhase": 0,
+          "beatIntervalSeconds": 0.5,
+          "presentationTimeSeconds": 0
+        },
+        "triggers": [],
+        "params": {
+          "sourceDurationSeconds": 8,
+          "sliceCount": 3,
+          "mode": "PONG",
+          "jumpSizeBeats": 1,
+          "loopCount": 1,
+          "playbackRate": 1,
+          "accentMode": "OFF",
+          "randomSeed": 305419896,
+          "feel": 0
+        }
+      },
+      "expected": {
+        "output": {
+          "activeSlice": 1,
+          "effectiveSliceCount": 3,
+          "sourceTimestampSeconds": 2.6666666666666665,
+          "targetPlaybackRate": 1,
+          "jumpGeneration": 1,
+          "jumpReason": "scheduled",
+          "mode": "PONG",
+          "loopIteration": 1,
+          "loopCount": 1
+        },
+        "nextState": {
+          "activeSlice": 1,
+          "pongDirection": 1,
+          "loopIteration": 1,
+          "jumpGeneration": 1,
+          "nextBoundaryBeat": 2,
+          "sliceStartedBeat": 1,
+          "sourceAnchorTransportSeconds": 0.5,
+          "sourceAnchorOffsetSeconds": 0,
+          "mode": "PONG",
+          "loopCount": 1,
+          "pendingTrigger": null
+        }
+      }
+    },
+    {
+      "name": "pong-boundary-2",
+      "input": {
+        "previousState": {
+          "activeSlice": 1,
+          "pongDirection": 1,
+          "loopIteration": 1,
+          "jumpGeneration": 1,
+          "nextBoundaryBeat": 2,
+          "sliceStartedBeat": 1,
+          "sourceAnchorTransportSeconds": 0.5,
+          "sourceAnchorOffsetSeconds": 0,
+          "mode": "PONG",
+          "loopCount": 1,
+          "pendingTrigger": null
+        },
+        "transport": {
+          "transportSeconds": 1,
+          "audioOutputTimeSeconds": 0,
+          "performanceTimeSeconds": 0,
+          "playing": true,
+          "discontinuityGeneration": 0,
+          "beatPosition": 2,
+          "beatPhase": 0,
+          "beatIntervalSeconds": 0.5,
+          "presentationTimeSeconds": 0
+        },
+        "triggers": [],
+        "params": {
+          "sourceDurationSeconds": 8,
+          "sliceCount": 3,
+          "mode": "PONG",
+          "jumpSizeBeats": 1,
+          "loopCount": 1,
+          "playbackRate": 1,
+          "accentMode": "OFF",
+          "randomSeed": 305419896,
+          "feel": 0
+        }
+      },
+      "expected": {
+        "output": {
+          "activeSlice": 2,
+          "effectiveSliceCount": 3,
+          "sourceTimestampSeconds": 5.333333333333333,
+          "targetPlaybackRate": 1,
+          "jumpGeneration": 2,
+          "jumpReason": "scheduled",
+          "mode": "PONG",
+          "loopIteration": 1,
+          "loopCount": 1
+        },
+        "nextState": {
+          "activeSlice": 2,
+          "pongDirection": 1,
+          "loopIteration": 1,
+          "jumpGeneration": 2,
+          "nextBoundaryBeat": 3,
+          "sliceStartedBeat": 2,
+          "sourceAnchorTransportSeconds": 1,
+          "sourceAnchorOffsetSeconds": 0,
+          "mode": "PONG",
+          "loopCount": 1,
+          "pendingTrigger": null
+        }
+      }
+    },
+    {
+      "name": "pong-boundary-3",
+      "input": {
+        "previousState": {
+          "activeSlice": 2,
+          "pongDirection": 1,
+          "loopIteration": 1,
+          "jumpGeneration": 2,
+          "nextBoundaryBeat": 3,
+          "sliceStartedBeat": 2,
+          "sourceAnchorTransportSeconds": 1,
+          "sourceAnchorOffsetSeconds": 0,
+          "mode": "PONG",
+          "loopCount": 1,
+          "pendingTrigger": null
+        },
+        "transport": {
+          "transportSeconds": 1.5,
+          "audioOutputTimeSeconds": 0,
+          "performanceTimeSeconds": 0,
+          "playing": true,
+          "discontinuityGeneration": 0,
+          "beatPosition": 3,
+          "beatPhase": 0,
+          "beatIntervalSeconds": 0.5,
+          "presentationTimeSeconds": 0
+        },
+        "triggers": [],
+        "params": {
+          "sourceDurationSeconds": 8,
+          "sliceCount": 3,
+          "mode": "PONG",
+          "jumpSizeBeats": 1,
+          "loopCount": 1,
+          "playbackRate": 1,
+          "accentMode": "OFF",
+          "randomSeed": 305419896,
+          "feel": 0
+        }
+      },
+      "expected": {
+        "output": {
+          "activeSlice": 1,
+          "effectiveSliceCount": 3,
+          "sourceTimestampSeconds": 2.6666666666666665,
+          "targetPlaybackRate": 1,
+          "jumpGeneration": 3,
+          "jumpReason": "scheduled",
+          "mode": "PONG",
+          "loopIteration": 1,
+          "loopCount": 1
+        },
+        "nextState": {
+          "activeSlice": 1,
+          "pongDirection": -1,
+          "loopIteration": 1,
+          "jumpGeneration": 3,
+          "nextBoundaryBeat": 4,
+          "sliceStartedBeat": 3,
+          "sourceAnchorTransportSeconds": 1.5,
+          "sourceAnchorOffsetSeconds": 0,
+          "mode": "PONG",
+          "loopCount": 1,
+          "pendingTrigger": null
+        }
+      }
+    }
+  ]
+}

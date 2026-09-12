@@ -1,0 +1,74 @@
+{
+  "oracle": "webgpu-research/lab/browser/deck-pgm/src/timesampler/",
+  "module": "reducer.ts",
+  "version": 1,
+  "cases": [
+    {
+      "name": "rnd-seeded-jump",
+      "input": {
+        "previousState": {
+          "activeSlice": 0,
+          "pongDirection": 1,
+          "loopIteration": 1,
+          "jumpGeneration": 0,
+          "nextBoundaryBeat": 1,
+          "sliceStartedBeat": 0,
+          "sourceAnchorTransportSeconds": 0,
+          "sourceAnchorOffsetSeconds": 0,
+          "mode": "RND",
+          "loopCount": 1,
+          "pendingTrigger": null
+        },
+        "transport": {
+          "transportSeconds": 0.5,
+          "audioOutputTimeSeconds": 0,
+          "performanceTimeSeconds": 0,
+          "playing": true,
+          "discontinuityGeneration": 0,
+          "beatPosition": 1,
+          "beatPhase": 0,
+          "beatIntervalSeconds": 0.5,
+          "presentationTimeSeconds": 0
+        },
+        "triggers": [],
+        "params": {
+          "sourceDurationSeconds": 8,
+          "sliceCount": 6,
+          "mode": "RND",
+          "jumpSizeBeats": 1,
+          "loopCount": 1,
+          "playbackRate": 1,
+          "accentMode": "OFF",
+          "randomSeed": 3735928559,
+          "feel": 0
+        }
+      },
+      "expected": {
+        "output": {
+          "activeSlice": 1,
+          "effectiveSliceCount": 6,
+          "sourceTimestampSeconds": 1.3333333333333333,
+          "targetPlaybackRate": 1,
+          "jumpGeneration": 1,
+          "jumpReason": "scheduled",
+          "mode": "RND",
+          "loopIteration": 1,
+          "loopCount": 1
+        },
+        "nextState": {
+          "activeSlice": 1,
+          "pongDirection": 1,
+          "loopIteration": 1,
+          "jumpGeneration": 1,
+          "nextBoundaryBeat": 2,
+          "sliceStartedBeat": 1,
+          "sourceAnchorTransportSeconds": 0.5,
+          "sourceAnchorOffsetSeconds": 0,
+          "mode": "RND",
+          "loopCount": 1,
+          "pendingTrigger": null
+        }
+      }
+    }
+  ]
+}

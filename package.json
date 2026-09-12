@@ -1,0 +1,9 @@
+{
+  "name": "zig-swap",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "fixtures:generate": "bun run core/fixtures/generate-timesampler-fixtures.mjs",
+    "prep:analyze": "bun run prep/scripts/analyze-track.mjs"
+  }
+}

@@ -1,0 +1,103 @@
+{
+  "oracle": "webgpu-research/lab/browser/deck-pgm/src/timesampler/",
+  "module": "groove.ts",
+  "version": 1,
+  "cases": [
+    {
+      "name": "beat=0 interval=1 feel=0",
+      "input": {
+        "beat": 0,
+        "intervalBeats": 1,
+        "feel": 0
+      },
+      "expected": {
+        "segment": {
+          "start": 0,
+          "length": 1,
+          "progress": 0
+        },
+        "nextBeat": 1
+      }
+    },
+    {
+      "name": "beat=0.5 interval=1 feel=0",
+      "input": {
+        "beat": 0.5,
+        "intervalBeats": 1,
+        "feel": 0
+      },
+      "expected": {
+        "segment": {
+          "start": 0,
+          "length": 1,
+          "progress": 0.5
+        },
+        "nextBeat": 1
+      }
+    },
+    {
+      "name": "beat=1.75 interval=0.5 feel=1",
+      "input": {
+        "beat": 1.75,
+        "intervalBeats": 0.5,
+        "feel": 1
+      },
+      "expected": {
+        "segment": {
+          "start": 1.6666666666666665,
+          "length": 0.33333333333333337,
+          "progress": 0.2500000000000004
+        },
+        "nextBeat": 2
+      }
+    },
+    {
+      "name": "beat=2.1 interval=0.5 feel=1",
+      "input": {
+        "beat": 2.1,
+        "intervalBeats": 0.5,
+        "feel": 1
+      },
+      "expected": {
+        "segment": {
+          "start": 2,
+          "length": 0.6666666666666666,
+          "progress": 0.15000000000000013
+        },
+        "nextBeat": 2.6666666666666665
+      }
+    },
+    {
+      "name": "beat=0 interval=0.75 feel=2",
+      "input": {
+        "beat": 0,
+        "intervalBeats": 0.75,
+        "feel": 2
+      },
+      "expected": {
+        "segment": {
+          "start": 0,
+          "length": 1.125,
+          "progress": 0
+        },
+        "nextBeat": 1.125
+      }
+    },
+    {
+      "name": "beat=1.5 interval=0.75 feel=2",
+      "input": {
+        "beat": 1.5,
+        "intervalBeats": 0.75,
+        "feel": 2
+      },
+      "expected": {
+        "segment": {
+          "start": 1.125,
+          "length": 1.125,
+          "progress": 0.3333333333333333
+        },
+        "nextBeat": 2.25
+      }
+    }
+  ]
+}
