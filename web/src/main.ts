@@ -1,57 +1,129 @@
-import { isRemapFrameMessage, type RemapFrameMessage } from './protocol';
-const canvas = document.querySelector<HTMLCanvasElement>('#pgm');const statusEl = document.querySelector<HTMLParagraphElement>('#status');
+import { FixtureDecoder } from './fixture-decoder';
+import { isRemapFrameMessage, isRemapStatusMessage, type RemapFrameMessage } from './protocol';
+import { PgmBlitter } from './pgm-blitter';
+
+const canvas = document.querySelector<HTMLCanvasElement>('#pgm');
+const statusEl = document.querySelector<HTMLParagraphElement>('#status');
 const frameEl = document.querySelector<HTMLPreElement>('#frame');
 
 if (!canvas || !statusEl || !frameEl) {
   throw new Error('Missing #pgm, #status, or #frame elements');
 }
 
-const ctx = canvas.getContext('2d');
-if (!ctx) {
-  throw new Error('2D context unavailable (WebGPU blit lands in V1S-78)');
-}
+const CLIP_URL = '/fixtures/test-media/video/fixture-clip.mp4';
+const BEATS_URL = '/fixtures/test-media/analysis/track.beats.json';
 
-const worker = new Worker('/remap.worker.js', { type: 'module' });
+let worker: Worker | null = null;
+let blitter: PgmBlitter | null = null;
+let decoder: FixtureDecoder | null = null;
 
 let lastFrame: RemapFrameMessage | null = null;
+let wasmLabel = 'loading WASM…';
+let videoLabel = 'WebCodecs → WebGPU (starting…)';
 
-worker.onmessage = (event: MessageEvent) => {
-  if (!isRemapFrameMessage(event.data)) return;
-  lastFrame = event.data;
-  drawPlaceholder();
-};
-
-worker.onerror = (error) => {
-  statusEl.textContent = `Worker error: ${error.message}`;
-};
-
-function drawPlaceholder(): void {
-  if (!lastFrame) return;
-
-  const { width, height } = canvas;
-  ctx.fillStyle = '#0b0d12';
-  ctx.fillRect(0, 0, width, height);
-
-  ctx.fillStyle = '#7dd3fc';
-  ctx.font = '16px system-ui, sans-serif';
-  ctx.fillText('PGM placeholder — WebGPU blit in V1S-78', 24, 40);
-
-  ctx.fillStyle = '#e2e8f0';
-  ctx.font = '14px ui-monospace, monospace';
-  ctx.fillText(
-    `sourceTime: ${lastFrame.sourceTimeSeconds.toFixed(3)}s`,
-    24,
-    72,
-  );
-  ctx.fillText(
-    `chop grid=${lastFrame.chopState.gridIndex} loop=${lastFrame.chopState.loopCount} stutter=${lastFrame.chopState.stutterActive}`,
-    24,
-    94,
-  );
-
-  frameEl.textContent = JSON.stringify(lastFrame, null, 2);
-  statusEl.textContent = 'Worker stub running (WASM core pending V1S-79)';
+function updateOverlay(): void {
+  if (lastFrame) {
+    frameEl.textContent = JSON.stringify(lastFrame, null, 2);
+  }
+  statusEl.textContent = `PGM: ${videoLabel} | remap: ${wasmLabel}`;
 }
 
-statusEl.textContent = 'Starting remap worker…';
-drawPlaceholder();
+function disposeSession(): void {
+  decoder?.stop();
+  decoder = null;
+  worker?.terminate();
+  worker = null;
+  blitter?.destroy();
+  blitter = null;
+}
+
+async function loadBeatGrid(): Promise<{ beatIntervalSeconds: number; durationSeconds: number }> {
+  const response = await fetch(BEATS_URL);
+  if (!response.ok) {
+    throw new Error(`Failed to load track.beats.json (${response.status})`);
+  }
+  const payload = (await response.json()) as { bpm: number; duration: number };
+  if (!Number.isFinite(payload.bpm) || payload.bpm <= 0) {
+    throw new Error('track.beats.json missing valid bpm');
+  }
+  return {
+    beatIntervalSeconds: 60 / payload.bpm,
+    durationSeconds: payload.duration,
+  };
+}
+
+async function boot(): Promise<void> {
+  disposeSession();
+  lastFrame = null;
+  wasmLabel = 'loading WASM…';
+  videoLabel = 'WebCodecs → WebGPU (starting…)';
+  statusEl.textContent = 'Initializing WebGPU + WebCodecs…';
+
+  blitter = new PgmBlitter();
+  await blitter.init(canvas);
+
+  worker = new Worker('/remap.worker.js', { type: 'module' });
+  worker.onmessage = (event: MessageEvent) => {
+    if (isRemapStatusMessage(event.data)) {
+      wasmLabel = event.data.mode === 'wasm' ? 'Zig WASM' : 'stub fallback (WASM unavailable)';
+      updateOverlay();
+      return;
+    }
+    if (!isRemapFrameMessage(event.data)) return;
+    lastFrame = event.data;
+    updateOverlay();
+  };
+  worker.onerror = (error) => {
+    statusEl.textContent = `Worker error: ${error.message}`;
+  };
+
+  const beats = await loadBeatGrid();
+  worker.postMessage({
+    type: 'configure-remap',
+    sourceDurationSeconds: beats.durationSeconds,
+    beatIntervalSeconds: beats.beatIntervalSeconds,
+  });
+  updateOverlay();
+
+  decoder = new FixtureDecoder({
+    clipUrl: CLIP_URL,
+    onBuffering: (decodedFrames) => {
+      videoLabel =
+        decodedFrames > 0
+          ? `WebCodecs → WebGPU (buffering… ${decodedFrames} frames)`
+          : 'WebCodecs → WebGPU (buffering clip…)';
+      updateOverlay();
+    },
+    onReady: (info) => {
+      videoLabel = `WebCodecs → WebGPU (${info.width}×${info.height}, ${Math.round(info.fps)}fps)`;
+      updateOverlay();
+    },
+    onFrame: (frame) => {
+      try {
+        blitter?.present(frame);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        videoLabel = `WebGPU blit error: ${message}`;
+        updateOverlay();
+      }
+    },
+    onError: (message) => {
+      videoLabel = `Decoder error: ${message}`;
+      updateOverlay();
+    },
+  });
+
+  decoder.start();
+}
+
+void boot().catch((error: unknown) => {
+  const message = error instanceof Error ? error.message : String(error);
+  statusEl.textContent = `Boot failed: ${message}`;
+});
+
+if (import.meta.hot) {
+  import.meta.hot.dispose(() => {
+    disposeSession();
+  });
+  import.meta.hot.accept();
+}

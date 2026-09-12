@@ -4,13 +4,19 @@
   "type": "module",
   "scripts": {
     "dev": "bun run web/dev-server.ts",
+    "build:wasm": "bun run scripts/build-wasm.mjs",
     "fixtures:generate": "bun run core/fixtures/generate-timesampler-fixtures.mjs",
     "prep:analyze": "bun run prep/scripts/analyze-track.mjs",
+    "prep:verify": "bun run scripts/verify-track-beats.mjs",
     "test:rust-spike": "cargo test --manifest-path core/archive/rust-spike/Cargo.toml",
-    "test:zig": "bun run scripts/test-zig.mjs"
+    "test:zig": "bun run scripts/test-zig.mjs",
+    "test:wasm-remap": "bun run scripts/test-wasm-remap.mjs"
   },
   "devDependencies": {
     "@types/bun": "latest",
     "typescript": "^5"
+  },
+  "dependencies": {
+    "mediabunny": "^1.56.1"
   }
 }

@@ -10,7 +10,7 @@ prep/fixtures/test-media/
 │   ├── Love me tonight (fullsong).wav      # Essentia analyze input (mix)
 │   └── Love me tonight - stem-only-Lead Vocal.wav
 ├── video/
-│   └── hf_20260708_194923_….mp4            # WebCodecs PGM clip
+│   └── fixture-clip.mp4                    # WebCodecs PGM clip (v0)
 └── analysis/                               # written by prep/ scripts (gitignore optional)
     ├── track.beats.json                    # locked grid from fullsong
     └── vocal.beats.json                    # optional stem grid

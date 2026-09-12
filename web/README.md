@@ -1,6 +1,6 @@
 # Web shell (Stack C)
 
-Minimal PGM host: bun dev server, remap worker stub, canvas placeholder. WebCodecs decode and WebGPU blit land in later tickets.
+PGM host: bun dev server, WebCodecs frame source, WebGPU present, Zig WASM remap worker.
 
 ## Dev
 
@@ -10,7 +10,16 @@ From repo root:
 bun run dev
 ```
 
-Opens `http://localhost:5173` with HMR.
+Opens `http://localhost:5173` with HMR. Serves fixture media from `prep/fixtures/` at `/fixtures/...`.
+
+### Demo (V1S-78 + V1S-79)
+
+1. Use Chrome/Edge with WebCodecs + WebGPU enabled.
+2. `bun run dev` — builds `remap.wasm` on startup.
+3. Canvas shows fixture clip (`fixture-clip.mp4`) via WebCodecs decode → WebGPU blit.
+4. HUD `<pre>` shows live `{ sourceTimeSeconds, chopState }` from the WASM worker.
+
+No `HTMLVideoElement` on the decode/present hot path.
 
 ## Worker message contract (ADR-0003)
 
@@ -30,11 +39,15 @@ interface RemapFrameMessage {
 }
 ```
 
-Main thread uses `sourceTimeSeconds` to seek/decode the WebCodecs pipeline (V1S-78). `chopState` drives PGM accents and debug HUD.
-
-### Main → worker (future)
+### Main → worker
 
 ```typescript
+interface ConfigureRemapMessage {
+  type: 'configure-remap';
+  sourceDurationSeconds: number;
+  beatIntervalSeconds: number;
+}
+
 interface TransportSampleMessage {
   type: 'transport-sample';
   clockTimeSeconds: number;
@@ -42,11 +55,13 @@ interface TransportSampleMessage {
 }
 ```
 
-Locked beat grid arrives from `prep/fixtures/test-media/analysis/track.beats.json` on the main thread first; worker owns remap reduction once WASM core is wired (V1S-79).
+Locked beat grid: `prep/fixtures/test-media/analysis/track.beats.json` (verify with `bun run prep:verify`).
 
 ## WASM core
 
-Winning compiled core: `core/zig/` (ADR-0008). Worker stub in `src/remap.worker.ts` — replace placeholder interval with WASM imports when `zig build` wasm32 artifact exists.
+Build artifact: `bun run build:wasm` → `web/.dev/remap.wasm` from `core/zig/src/wasm_entry.zig`.
+
+Round-trip test: `bun run test:wasm-remap`.
 
 ## Toolchain
 

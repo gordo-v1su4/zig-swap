@@ -1,6 +1,6 @@
 /**
  * Worker ↔ main remap frame contract (ADR-0003).
- * WASM core will populate these fields; stub sends placeholders until V1S-79.
+ * WASM core populates these fields each worker tick.
  */
 
 export interface ChopState {
@@ -23,8 +23,26 @@ export interface TransportSampleMessage {
   readonly playbackRate: number;
 }
 
-export type WorkerInbound = TransportSampleMessage;
-export type WorkerOutbound = RemapFrameMessage;
+/** Main → worker WASM init from locked prep analysis. */
+export interface ConfigureRemapMessage {
+  readonly type: 'configure-remap';
+  readonly sourceDurationSeconds: number;
+  readonly beatIntervalSeconds: number;
+}
+
+export type WorkerInbound = TransportSampleMessage | ConfigureRemapMessage;
+export interface RemapStatusMessage {
+  readonly type: 'remap-status';
+  readonly mode: 'wasm' | 'fallback';
+}
+
+export type WorkerOutbound = RemapFrameMessage | RemapStatusMessage;
+
+export function isRemapStatusMessage(value: unknown): value is RemapStatusMessage {
+  if (typeof value !== 'object' || value === null) return false;
+  const msg = value as Record<string, unknown>;
+  return msg.type === 'remap-status' && (msg.mode === 'wasm' || msg.mode === 'fallback');
+}
 
 export function isRemapFrameMessage(value: unknown): value is RemapFrameMessage {
   if (typeof value !== 'object' || value === null) return false;

@@ -61,3 +61,18 @@ Single-context layout: root `CONTEXT.md` and `docs/adr/`. See `docs/agents/domai
 ### Automation
 
 Hands-off loop: Linear frontier → `/implement` → PR → Done. See `docs/agents/automation.md` and `workflows/agent-automation-loop.md`.
+
+## Learned User Preferences
+
+- Always use **bun** / **bunx** for JS/TS packages, installs, and scripts — never npm, npx, pnpm, or yarn.
+- Always use **uv** for Python prep and scripts — never pip or bare `python`.
+- Prefer hands-off automation: Linear frontier tickets drive agent sessions via `/implement`, one ticket per fresh session.
+
+## Learned Workspace Facts
+
+- **zig-swap** is the greenfield Stack C build (WebCodecs + WASM remap core + WebGPU); GitHub repo `gordo-v1su4/zig-swap`.
+- **webgpu-research** is the parked lab predecessor — port `timesampler` semantics and Essentia prep from there, not fftron-sync.
+- **beatsmaxxer-pro** is the best-performing finished app today (Stack A); benchmark feel/latency only, not architecture to copy.
+- **video-timeshaper** is the EditEngine / Time Shaper behavior-spec sibling repo.
+- v0 fixture media lives at `prep/fixtures/test-media/`; runtime reads locked `track.beats.json` (Essentia `studio-audio-v1` shape).
+- v0 program tracked in Linear under parent spec **V1S-69** with child tickets **V1S-70** through **V1S-77**.
