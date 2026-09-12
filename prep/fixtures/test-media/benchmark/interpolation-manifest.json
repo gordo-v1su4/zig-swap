@@ -1,0 +1,86 @@
+{
+  "version": 1,
+  "engine": "rife-ncnn-vulkan 20221029",
+  "model": "rife-v4.6",
+  "engineSha256": "4b970319db2814c82b15fceed8193151560a676a9eb63f20d4877be77b98f44f",
+  "factor": 4,
+  "preparation": "Original source -> 720p PNG -> 4x RIFE frames -> H264 at 96fps. Quarter-speed playback yields 24 unique frames/sec. Final three frames hold the last source frame. Scene boundaries retain hard cuts.",
+  "clips": [
+    {
+      "id": 1,
+      "sourceSha256": "861c58844d2e8aeede08f582b44ecb53f9febc94f7ffbcb736425045b8e39c2d",
+      "variant": {
+        "url": "/fixtures/test-media/benchmark/deck-1-720-rife4.mp4",
+        "sha256": "6f31e3405be5f61e7e16262413d27426e395823d125b1d00adca8c0abc79e8b9",
+        "duration": 12,
+        "fps": 96,
+        "width": 1280,
+        "height": 720,
+        "codec": "h264"
+      },
+      "inputFrames": 288,
+      "outputFrames": 1152,
+      "sceneCuts": [
+        36,
+        99,
+        156
+      ],
+      "renderSeconds": 32.8104945,
+      "totalSeconds": 36.344000699999995
+    },
+    {
+      "id": 4,
+      "sourceSha256": "5f5027fef25e282857fd31b13c051cced179e23ec5858f7eb95ed9b517e3948f",
+      "variant": {
+        "url": "/fixtures/test-media/benchmark/deck-4-720-rife4.mp4",
+        "sha256": "5fe7d4dc8bf5e24402bb92f6155054ea5ffbbf1f6ee3d54cceffdb470a44fd6f",
+        "duration": 9.125,
+        "fps": 96,
+        "width": 1280,
+        "height": 720,
+        "codec": "h264"
+      },
+      "inputFrames": 219,
+      "outputFrames": 876,
+      "sceneCuts": [],
+      "renderSeconds": 19.553806700000003,
+      "totalSeconds": 22.415397499999997
+    },
+    {
+      "id": 6,
+      "sourceSha256": "2614238fe1ebe28549475b002cee2b18a7a124bd9e9e1f39d20080ad2e84c90e",
+      "variant": {
+        "url": "/fixtures/test-media/benchmark/deck-6-720-rife4.mp4",
+        "sha256": "1f85f8115037722fdbb21c2a1c5fe6a7dcc0191f637177225f7561625835a28b",
+        "duration": 12,
+        "fps": 96,
+        "width": 1280,
+        "height": 720,
+        "codec": "h264"
+      },
+      "inputFrames": 288,
+      "outputFrames": 1152,
+      "sceneCuts": [],
+      "renderSeconds": 27.515637799999997,
+      "totalSeconds": 31.177439600000007
+    },
+    {
+      "id": 8,
+      "sourceSha256": "a01a5666182490f3268e766bae11b8aded406c15fb96c59ed040acd9836c76bc",
+      "variant": {
+        "url": "/fixtures/test-media/benchmark/deck-8-720-rife4.mp4",
+        "sha256": "c52b971a6e716a82e3894ead1d00aa088258038abd6393f513a8c5c11db091c9",
+        "duration": 12,
+        "fps": 96,
+        "width": 1280,
+        "height": 720,
+        "codec": "h264"
+      },
+      "inputFrames": 288,
+      "outputFrames": 1152,
+      "sceneCuts": [],
+      "renderSeconds": 32.581751600000004,
+      "totalSeconds": 36.018814
+    }
+  ]
+}

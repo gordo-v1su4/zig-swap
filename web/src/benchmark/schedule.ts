@@ -1,9 +1,10 @@
 import { createTimeSamplerState, reduceTimeSampler } from './vendor/reducer';
 import {nextGrooveBeat} from './vendor/groove';
 import type { TimeSamplerParams, TimeSamplerTransportSample } from './vendor/types';
-export interface Grid { beats: number[]; duration: number; bpm: number; onsets?:{time:number;strength:number}[]; variedGroove?:boolean; stems?:{name:string;notes:{time:number;note:number;velocity:number;channel:number}[]}[] }
-export interface Cut { id: number; at: number; source: number; pattern: string; stress: boolean; surprise: boolean; beat: number; triggerTime?:number }
-export const patterns = ['midi-stems','audio-dense','audio-stutter4','mixed','straight','forward','backward','quarter','eighth','sixteenth','stutter2','stutter4','stutter8','dotted','swing','surprise','32nd','64th'] as const;
+export interface TriggerChannel {name:string;events:{time:number;strength:number;note?:number}[]}
+export interface Grid { triggerChannels?:TriggerChannel[]; beats: number[]; duration: number; bpm: number; onsets?:{time:number;strength:number}[]; variedGroove?:boolean; stems?:{name:string;notes:{time:number;note:number;velocity:number;channel:number}[]}[] }
+export interface Cut { id: number; at: number; source: number; pattern: string; stress: boolean; surprise: boolean; beat: number; triggerTime?:number; speed?:number; rampPeriod?:number; smashBeatSeconds?:number }
+export const patterns = ['midi-stems','cuts-only','audio-dense','audio-stutter4','mixed','straight','forward','backward','quarter','eighth','sixteenth','stutter2','stutter4','stutter8','dotted','swing','surprise','32nd','64th','speed-normal','speed-quarter','speed-third','speed-ramp','speed-smash'] as const;
 export type Pattern = typeof patterns[number];
 export function beatTime(grid: Grid, beat: number): number {
   const i = Math.floor(beat), f = beat-i;
@@ -19,7 +20,10 @@ export function beatAt(grid: Grid, seconds: number): number {
 }
 export function buildSchedule(grid: Grid, durations: number[], seed: number, seconds: number, selected: Pattern='mixed'): Cut[][] {
   if(grid.beats.length<2 || grid.beats.some((b,i)=>!Number.isFinite(b)||(i>0&&b<=grid.beats[i-1]))) throw new Error('Invalid beat grid');
-  if(selected==='midi-stems')return buildMidiSchedule(grid,durations,seed,seconds);
+  if(selected==='cuts-only')return durations.map((duration,deck)=>[{id:0,at:0,source:deck*duration/durations.length,pattern:selected,stress:false,surprise:false,beat:0}]);
+  if((selected==='speed-ramp'||selected==='speed-smash')&&grid.triggerChannels?.length)return buildTriggeredRamps(grid,durations,seed,seconds,selected);
+  if(selected.startsWith('speed-'))return durations.map((duration,deck)=>[{id:0,at:0,source:deck*duration/durations.length,pattern:selected,stress:false,surprise:false,beat:0,speed:selected==='speed-quarter'?.25:selected==='speed-third'?1/3:1,rampPeriod:selected==='speed-ramp'?2*60/grid.bpm:undefined,smashBeatSeconds:selected==='speed-smash'?60/grid.bpm:undefined}]);
+  if(selected==='midi-stems'||grid.triggerChannels?.length)return buildMidiSchedule(grid,durations,seed,seconds,selected);
   if(selected==='audio-stutter4'||selected==='audio-dense')return buildAudioSchedule(grid,durations,seed,seconds,selected==='audio-dense');
   return durations.map((duration,deck)=>{
     const events: Cut[]=[];
@@ -96,30 +100,59 @@ export function targetAt(events: Cut[], time:number, duration:number) {
   let lo=0,hi=events.length-1;
   while(lo<hi){const mid=Math.ceil((lo+hi)/2);if(events[mid].at<=time)lo=mid;else hi=mid-1;}
   const event=events[lo];
-  return { event, source:((event.source+Math.max(0,time-event.at))%duration+duration)%duration };
+  const elapsed=Math.max(0,time-event.at);
+  let travel=event.rampPeriod ? 1.25*elapsed-.75*event.rampPeriod/(2*Math.PI)*Math.sin(2*Math.PI*elapsed/event.rampPeriod) : elapsed*(event.speed??1);
+  if(event.smashBeatSeconds){
+    const b=elapsed/event.smashBeatSeconds,cycles=Math.floor(b/16),phase=b%16;
+    travel=(cycles*10+Math.min(phase,12)*.25+Math.min(Math.max(phase-12,0),1)*4+Math.max(phase-13,0))*event.smashBeatSeconds;
+  }
+  return { event, source:((event.source+travel)%duration+duration)%duration };
 }
 
-export function buildMidiSchedule(grid:Grid,durations:number[],seed:number,seconds:number):Cut[][] {
-  if(!grid.stems?.length)throw new Error('MIDI stem events are required');
+export function buildMidiSchedule(grid:Grid,durations:number[],seed:number,seconds:number,selected:Pattern='midi-stems'):Cut[][] {
+  const channels=grid.triggerChannels??grid.stems?.map(stem=>({name:stem.name,events:stem.notes.map(n=>({time:n.time,note:n.note,strength:n.velocity/127}))}));
+  if(!channels?.length)throw new Error('MIDI stem events are required');
   return durations.map((duration,deck)=>{
-    const stem=grid.stems![deck%grid.stems!.length];
-    const step=stem.name==='vocals'?.5:stem.name==='synth'?.25:1;
+    const stem=channels[deck%channels.length];
+    const step=selected==='quarter'?1:selected==='eighth'?.5:selected==='sixteenth'?.25:stem.name==='synth'?.25:stem.name==='bass'?1:.5;
+    const repeats=selected==='stutter2'?2:selected==='stutter8'?8:4;
     let state=(seed+deck*997)>>>0,blockedUntil=0;
     const events:Cut[]=[{id:0,at:0,source:deck*duration/durations.length,pattern:stem.name+'-preroll',stress:false,surprise:false,beat:0}];
-    for(const note of stem.notes){
+    for(const note of stem.events){
       if(note.time>=seconds)break;
-      if(note.time<blockedUntil||note.velocity<=0)continue;
+      if(note.time<blockedUntil||note.strength<=0)continue;
       state=(Math.imul(state,1664525)+1013904223)>>>0;
       const source=Math.floor(state/4294967296*8)*duration/8;
       const startBeat=beatAt(grid,note.time);
       // Four plays of the same anchor, beginning exactly at the note-on.
       // Chords and notes inside a burst coalesce so they cannot cancel repeats.
-      for(let repeat=0;repeat<4;repeat++){
+      for(let repeat=0;repeat<repeats;repeat++){
         const beat=startBeat+repeat*step,at=beatTime(grid,beat);
         if(at>=seconds)break;
-        events.push({id:events.length,at,source,pattern:stem.name+'-stutter4-'+(step===1?'quarter':step===.5?'eighth':'sixteenth')+'-note'+note.note,stress:false,surprise:false,beat,triggerTime:note.time});
+        events.push({id:events.length,at,source,pattern:stem.name+'-stutter'+repeats+'-'+(step===1?'quarter':step===.5?'eighth':'sixteenth')+(note.note===undefined?'':'-note'+note.note),stress:false,surprise:false,beat,triggerTime:note.time});
       }
-      blockedUntil=beatTime(grid,startBeat+4*step);
+      blockedUntil=beatTime(grid,startBeat+repeats*step);
+    }
+    return events;
+  });
+}
+
+function buildTriggeredRamps(grid:Grid,durations:number[],seed:number,seconds:number,pattern:Pattern):Cut[][]{
+  return durations.map((duration,deck)=>{
+    const channel=grid.triggerChannels![deck%grid.triggerChannels!.length];
+    const events:Cut[]=[{id:0,at:0,source:deck*duration/durations.length,pattern:'speed-normal',stress:false,surprise:false,beat:0,speed:1}];
+    let state=(seed+deck*997)>>>0,blockedUntil=0;
+    for(const trigger of channel.events){
+      if(trigger.time>=seconds)break;
+      if(trigger.time<blockedUntil)continue;
+      state=(Math.imul(state,1664525)+1013904223)>>>0;
+      if(state/4294967296>.4)continue;
+      const at=trigger.time,source=targetAt(events,at,duration).source;
+      const period=2*60/grid.bpm,smashBeat=60/grid.bpm;
+      const stop=at+(pattern==='speed-ramp'?period:16*smashBeat);
+      events.push({id:events.length,at,source,pattern,stress:false,surprise:false,beat:beatAt(grid,at),triggerTime:at,rampPeriod:pattern==='speed-ramp'?period:undefined,smashBeatSeconds:pattern==='speed-smash'?smashBeat:undefined});
+      if(stop<seconds)events.push({id:events.length,at:stop,source:targetAt(events,stop,duration).source,pattern:'speed-normal',stress:false,surprise:false,beat:beatAt(grid,stop),speed:1});
+      blockedUntil=stop+.12;
     }
     return events;
   });

@@ -2,16 +2,30 @@ import {buildSchedule,beatAt,targetAt,strongOnsets,patterns,type Grid,type Patte
 import {makeAdapter,type Backend,type Clip,type DeckAdapter,type Observation} from './adapters';
 import {DeckPresenter} from './presenter';
 import {FrameScore,percentile} from './scoring';
-import {GpuBankDeck} from './gpu-bank';
+import {estimatedResidentBytes,GpuBankDeck} from './gpu-bank';
 const el=<T extends HTMLElement>(id:string)=>document.getElementById(id) as T;
 const select=(id:string)=>el<HTMLSelectElement>(id);
 const status=el('status'),live=el('live'),reports=el('reports');
 const play=el<HTMLButtonElement>('play'),pause=el<HTMLButtonElement>('pause');
-patterns.forEach(p=>select('pattern').add(new Option(p,p)));
+patterns.filter(p=>!p.startsWith('speed-')).forEach(p=>select('pattern').add(new Option(p==='midi-stems'?'Four repeats · stem divisions':p==='cuts-only'?'Deck cuts only · continuous motion':p,p)));
 interface Manifest {clips:{id:number;variants:Record<string,Clip>}[];audio:{url:string;duration:number;sha256:string};grid:{url:string;sha256:string;provenance:string}}
 let manifest:Manifest,baseGrid:Grid,buffer:AudioBuffer;
 let originalGrid:Grid,audioEvents:Grid&{sourceSha256:string;analysis:Record<string,unknown>},analysisHash='';
 let midiEvents:Grid&{sourceUrl:string;sourceSha256:string;analysis:Record<string,unknown>},midiHash='',bufferUrl='';
+type AudioFeatures={onsets:{time:number;strength:number}[];activity:{time:number;strength:number}[];loudness:{time:number;strength:number}[]};
+let redlineAnalysis:Grid&{sourceSha256:string;analysis:Record<string,unknown>;features:Record<string,AudioFeatures>},redlineHash='';
+let interpolated:{clips:{id:number;variant:Clip}[]}|null=null;
+let lastPresentationSlot=-1,lastHudTime=-Infinity;
+const isRemap=()=>select('mode').value==='remap';
+const usesRedline=()=>select('trigger').value!=='legacy'||select('pattern').value==='midi-stems';
+function modeControls(){
+  const remap=isRemap();
+  el('speed-control').hidden=!remap;el('interpolation-control').hidden=!remap;
+  select('pattern').parentElement!.hidden=remap;select('groove').parentElement!.hidden=remap;
+  el('mode-note').textContent=remap?'24 fps output · switch all decks · seeded ramps on selected triggers · music unchanged':'Trigger → cut or repeat burst · original playback checkpoint';
+}
+select('mode').onchange=()=>{modeControls();if(isRemap()){select('backend').value='gpu-bank';select('budget').value='24576';select('resolution').value='720';select('view').value='switch';}else{select('budget').value='12288';select('view').value='switch';}};
+modeControls();
 let programTimes:number[]=[];
 let context:AudioContext,gain:GainNode,audio:AudioBufferSourceNode|null=null;
 let adapters:DeckAdapter[]=[],presenter:DeckPresenter|null=null,scores:FrameScore[]=[],schedules:Cut[][]=[];
@@ -25,7 +39,7 @@ let settings:Record<string,unknown>={},records:Record<string,unknown>[]=[];
 let finishRun:(()=>void)|null=null,suiteCancelled=false;
 const audioOutputTime=()=>{const stamp=context.getOutputTimestamp?.();return stamp?.contextTime!==undefined&&stamp.contextTime>0?stamp.contextTime:Math.max(0,context.currentTime-(context.outputLatency||0));};
 const clock=()=>playing?offset+Math.max(0,audioOutputTime()-anchor):offset;
-function controls(disabled:boolean){for(const id of ['backend','count','resolution','pattern','seed','duration','view','budget','groove'])el<HTMLInputElement>(id).disabled=disabled;}
+function controls(disabled:boolean){for(const id of ['backend','count','resolution','pattern','seed','duration','view','budget','groove','mode','trigger','speed','interpolation'])el<HTMLInputElement>(id).disabled=disabled;}
 async function init(){
   manifest=await (await fetch('/fixtures/test-media/benchmark/manifest.json')).json();
   baseGrid=await (await fetch(manifest.grid.url)).json();
@@ -39,6 +53,12 @@ async function init(){
   const midiBytes=await (await fetch('/fixtures/test-media/benchmark/redline-midi.json')).arrayBuffer();
   midiEvents=JSON.parse(new TextDecoder().decode(midiBytes));
   midiHash=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',midiBytes))).map(b=>b.toString(16).padStart(2,'0')).join('');
+  const triggerBytes=await (await fetch('/fixtures/test-media/benchmark/redline-analysis.json')).arrayBuffer();
+  redlineAnalysis=JSON.parse(new TextDecoder().decode(triggerBytes));
+  redlineHash=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',triggerBytes))).map(b=>b.toString(16).padStart(2,'0')).join('');
+  if(redlineAnalysis.sourceSha256!==midiEvents.sourceSha256)throw new Error('Redline analysis/audio mismatch');
+  const interpolation=await fetch('/fixtures/test-media/benchmark/interpolation-manifest.json');
+  if(interpolation.ok)interpolated=await interpolation.json();
   status.textContent='Ready. Play starts audible music and independent musical patterns.';
 }
 function extendedGrid(seconds:number):Grid {
@@ -49,17 +69,18 @@ function extendedGrid(seconds:number):Grid {
     for(const onset of baseGrid.onsets??[])if(onset.time<buffer.duration)onsets.push({...onset,time:onset.time+cycle*buffer.duration});
   }
   const stems=baseGrid.stems?.map(stem=>({...stem,notes:Array.from({length:Math.ceil(seconds/buffer.duration)+1},(_,cycle)=>stem.notes.filter(n=>n.time<buffer.duration).map(n=>({...n,time:n.time+cycle*buffer.duration}))).flat()}));
-  return {...baseGrid,beats,onsets,stems,duration:seconds};
+  const triggerChannels=baseGrid.triggerChannels?.map(channel=>({...channel,events:Array.from({length:Math.ceil(seconds/buffer.duration)+1},(_,cycle)=>channel.events.filter(e=>e.time<buffer.duration).map(e=>({...e,time:e.time+cycle*buffer.duration}))).flat()}));
+  return {...baseGrid,beats,onsets,stems,triggerChannels,duration:seconds};
 }
 async function audioReady(){
   context??=new AudioContext();await context.resume();
   if(!gain){gain=context.createGain();gain.connect(context.destination);}
   gain.gain.value=Number(el<HTMLInputElement>('volume').value);
-  const url=select('pattern').value==='midi-stems'?midiEvents.sourceUrl:manifest.audio.url;
+  const url=usesRedline()?midiEvents.sourceUrl:manifest.audio.url;
   if(!buffer||bufferUrl!==url){
     const bytes=await (await fetch(url)).arrayBuffer();
     const hash=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes))).map(b=>b.toString(16).padStart(2,'0')).join('');
-    if(hash!==(select('pattern').value==='midi-stems'?midiEvents.sourceSha256:manifest.audio.sha256))throw new Error('Audio hash does not match event source');
+    if(hash!==(usesRedline()?midiEvents.sourceSha256:manifest.audio.sha256))throw new Error('Audio hash does not match event source');
     buffer=await context.decodeAudioData(bytes);bufferUrl=url;
   }
 }
@@ -88,16 +109,36 @@ async function begin(){
       await persist({kind:'capability-gate',backend,...result});
       throw new Error(`libmedia: ${result.reason}`);
     }
+    if(isRemap()&&backend!=='gpu-bank')throw new Error('Time remapping currently uses the resident GPU bank');
+    lastPresentationSlot=-1;lastHudTime=-Infinity;
     end=Number(select('duration').value);offset=0;invalid=[];frameTimes=[];lastRaf=0;
     clips=manifest.clips.slice(0,Number(select('count').value)).map(c=>c.variants[select('resolution').value]);
+    if(isRemap()&&select('interpolation').value==='rife4'){
+      if(select('resolution').value!=='720'||interpolated?.clips.length!==4)throw new Error('Prepare all four 720p interpolation clips first');
+      clips=clips.map((clip,i)=>interpolated!.clips.find(c=>c.id===i+1)?.variant??clip);
+    }
     const audioDriven=select('pattern').value.startsWith('audio-'),dense=select('pattern').value==='audio-dense';
     const midiDriven=select('pattern').value==='midi-stems';
     baseGrid=midiDriven?midiEvents:audioDriven?audioEvents:originalGrid;
+    if(usesRedline()){
+      const signal=select('trigger').value;
+      if(signal==='midi'||signal==='legacy')baseGrid={...midiEvents,triggerChannels:midiEvents.stems!.map(stem=>({name:stem.name,events:stem.notes.map(n=>({time:n.time,strength:n.velocity/127,note:n.note}))}))};
+      else{
+        const names=signal==='stem-onsets'?['vocals','synth','bass']:[signal.startsWith('vocals')?'vocals':'mix'];
+        const feature=signal.endsWith('activity')?'activity':signal.endsWith('loudness')?'loudness':'onsets';
+        baseGrid={...redlineAnalysis,triggerChannels:names.map(name=>({name,events:redlineAnalysis.features[name][feature].filter(e=>feature==='activity'||e.strength>=(feature==='loudness'?.5:.45))}))};
+      }
+    }
     grid=extendedGrid(end);const seed=Number(el<HTMLInputElement>('seed').value)>>>0;
     grid.variedGroove=select('groove').value==='varied';
     programTimes=audioDriven?strongOnsets(grid,dense).map(o=>o.time):grid.beats;
-    schedules=buildSchedule(grid,clips.map(c=>c.duration),seed,end,select('pattern').value as Pattern);
-    if(midiDriven){
+    const action=(isRemap()?select('speed').value:select('pattern').value) as Pattern;
+    schedules=buildSchedule(grid,clips.map(c=>c.duration),seed,end,action);
+    if(grid.triggerChannels){
+      const times=grid.triggerChannels.flatMap(channel=>channel.events.map(e=>e.time)).sort((a,b)=>a-b);
+      programTimes=[];for(const time of times)if(time>=0&&(!programTimes.length||time-programTimes.at(-1)!>=.08))programTimes.push(time);
+    }
+    if(midiDriven&&!grid.triggerChannels){
       const times=[...new Set(schedules.flatMap(events=>events.filter(e=>e.triggerTime===e.at).map(e=>e.at)))].sort((a,b)=>a-b);
       programTimes=times.filter((t,i)=>i===0||t-times[i-1]>=.08);
     }
@@ -111,6 +152,8 @@ async function begin(){
     if(id!==runId){currentPresenter.dispose();return;}
     start=performance.now();
     const totalBudget=Number(select('budget').value)*2**20;
+    const residentSizes=clips.map(estimatedResidentBytes),residentTotal=residentSizes.reduce((a,b)=>a+b,0);
+    if(backend==='gpu-bank'&&residentTotal>totalBudget)throw new Error('Resident frames exceed selected total memory cap');
     adapters=clips.map((c,i)=>{
       const receive=(o:Observation)=>{
       if(id!==runId||!playing)return;
@@ -124,7 +167,7 @@ async function begin(){
       const owned='createView' in o.source?o.source:o.source instanceof VideoFrame?o.source.clone():new VideoFrame(o.source,{timestamp:Math.round(o.pts*1e6),duration:Math.round(o.duration*1e6)});
       fresh[i]={...o,source:owned};
       };
-      const budget=Math.floor(totalBudget/clips.length);
+      const budget=Math.floor(totalBudget*(backend==='gpu-bank'?residentSizes[i]/residentTotal:1/clips.length));
       return backend==='gpu-bank'?new GpuBankDeck(c,presenter!.device,receive,budget,(n,total)=>{el(`deck-${i}`).textContent=`Deck ${i+1} · uploading ${n}/${total} GPU frames`;status.textContent='Preloading GPU textures. Playback will perform no decoding or frame upload.';}):makeAdapter(backend,c,receive,e=>{invalid.push(e);status.textContent=e;},budget);
     });
     await Promise.all(adapters.map(a=>a.load()));
@@ -135,6 +178,8 @@ async function begin(){
     settings.schemaVersion=6;settings.groove=select('groove').value;settings.triggerSource=audioDriven?`audio onsets + ${dense?'1/4, 1/8, 1/16':'1/8, 1/16'} stutters · ${grid.variedGroove?'varied groove':'straight'}`:'seeded musical patterns';
     if(audioDriven){settings.gridHash=analysisHash;settings.gridProvenance=audioEvents.analysis;settings.onsetThreshold=dense?.45:.65;settings.onsetRefractorySeconds=dense?.08:.12;settings.minimumOnsetHoldSeconds=1/30;}
     if(midiDriven){settings.schemaVersion=7;settings.audioHash=midiEvents.sourceSha256;settings.gridHash=midiHash;settings.gridProvenance=midiEvents.analysis;settings.triggerSource='Redline MIDI · vocals 1/8 · synth 1/16 · bass 1/4 · four-repeat stutters';settings.midiPolicy='Note-on starts four plays; chord notes and note-ons inside active burst coalesce; full mix unchanged';}
+    settings.schemaVersion=10;settings.rampSelection='Per-deck seeded 40% selection of eligible analyzed/MIDI triggers; no overlap; normal playback between ramps';settings.rampProfile='speed-ramp: cosine 0.5x to 2x to 0.5x over two beats; speed-smash: quarter speed 12 beats, 4x one beat, normal three beats';settings.mode=select('mode').value;settings.action=action;settings.outputCadenceFps=isRemap()?24:null;settings.interpolation=isRemap()?select('interpolation').value:'original';
+    if(usesRedline()){settings.audioHash=midiEvents.sourceSha256;settings.gridHash=select('trigger').value==='midi'?midiHash:redlineHash;settings.gridProvenance=select('trigger').value==='midi'?midiEvents.analysis:redlineAnalysis.analysis;settings.triggerSource=select('trigger').selectedOptions[0].textContent;settings.signal=select('trigger').value;settings.programRefractorySeconds=.08;}
     startAudio();status.textContent=`Playing ${clips.length} decks · ${backend}`;pause.disabled=false;raf=requestAnimationFrame(tick);
   }catch(e){if(id!==runId)return;status.textContent=String(e);await cleanup();controls(false);play.disabled=false;finishRun?.();finishRun=null;}
   finally{if(id===runId)busy=false;}
@@ -144,10 +189,16 @@ function tick(now:number){
   const time=clock();
   if(lastRaf){const delta=(now-lastRaf)/1000;frameTimes.push(delta);}lastRaf=now;
   if(time>=end){void finish();return;}
+  if(isRemap()){
+    const slot=Math.floor(time*24);
+    if(slot===lastPresentationSlot){raf=requestAnimationFrame(tick);return;}
+    lastPresentationSlot=slot;
+  }
+  const updateHud=now-lastHudTime>=250;
   const beat=beatAt(grid,time);
   let lo=0,hi=programTimes.length-1;
   while(lo<hi){const mid=Math.ceil((lo+hi)/2);if(programTimes[mid]<=time)lo=mid;else hi=mid-1;}
-  const beatIndex=lo,pgm=select('view').value==='fixed'?0:beatIndex%clips.length;
+  const beatIndex=lo,view=select('view').value,pgm=view==='fixed'?0:view.startsWith('deck-')?Math.min(clips.length-1,Number(view.slice(5))-1):beatIndex%clips.length;
   for(let i=0;i<adapters.length;i++){
     const target=targetAt(schedules[i],time,clips[i].duration);
     const future=schedules[i].filter(e=>e.at>time&&e.at<=time+.25&&!e.surprise);
@@ -164,14 +215,14 @@ function tick(now:number){
       if(frame.source instanceof VideoFrame)frame.source.close();
       fresh[i]=null;
     }
-    if(time-firstFrameAt[i]>.25&&!target.event.pattern.startsWith('stutter'))freezeSeconds[i]+=(frameTimes.at(-1)??0);
+    if(time-firstFrameAt[i]>.25&&!target.event.pattern.includes('stutter'))freezeSeconds[i]+=(frameTimes.at(-1)??0);
     const h=held[i];
     if(h){
       const direct=h.pts-target.source,drift=Math.min(Math.abs(direct),clips[i].duration-Math.abs(direct));
       const tolerance=1/clips[i].fps+(percentile(frameTimes.slice(-60),.5)??1/60);
       if(drift>tolerance){badDriftSince[i]??=time;longestBadDrift[i]=Math.max(longestBadDrift[i],time-badDriftSince[i]!);}else badDriftSince[i]=null;
     }
-    if(frameTimes.length%10===0)el(`deck-${i}`).textContent=`${i===pgm?'PGM · ':''}Deck ${i+1} · ${target.event.pattern}\nTarget ${target.source.toFixed(3)} · shown ${held[i]?.pts.toFixed(3)??'—'}\nUnique ${(unique[i]/Math.max(.1,time)).toFixed(1)} / ${clips[i].fps} fps`;
+    if(updateHud)el(`deck-${i}`).textContent=`${i===pgm?'PGM · ':''}Deck ${i+1} · ${target.event.pattern}\nTarget ${target.source.toFixed(3)} · shown ${held[i]?.pts.toFixed(3)??'—'}\nUnique ${(unique[i]/Math.max(.1,time)).toFixed(1)} / ${isRemap()?24:clips[i].fps} output fps · ${clips[i].fps} stored fps`;
   }
   presenter!.draw(pgm);
   if(beatIndex>lastProgramBeat){
@@ -181,12 +232,13 @@ function tick(now:number){
     if(time>=programTimes[beatIndex])programCuts.push({beat:beatIndex,scheduled:programTimes[beatIndex]??time,submitted:time,deck:pgm,ready:!!h&&h.generation===target.event.id&&error!==null&&error<=1/clips[pgm].fps+1/60,sourceError:error});
     lastProgramBeat=beatIndex;
   }
-  if(frameTimes.length%30===0){
+  if(updateHud){
+    lastHudTime=now;
     peakCacheBytes=Math.max(peakCacheBytes,adapters.reduce((sum,a)=>sum+Number(a.stats().estimatedCacheBytes??0),0));
     const display=percentile(frameTimes.filter(t=>t<.1),.5)??1/60;
     el('beat').textContent=`${time.toFixed(1)} s · ${grid.bpm.toFixed(1)} BPM · beat ${(Math.max(0,beat)%4+1).toFixed(1)} · ${settings.triggerSource}`;
     const bank=settings.backend==='gpu-bank';
-    live.textContent=`Display loop ${(1/display).toFixed(1)} Hz · ${bank?'0 active decoders · resident GPU frames':`${clips.length} active decoders`} · PGM reuses deck ${pgm+1}\n`+scores.map((s,i)=>{const r=s.summary(time,display);return `D${i+1}: on time ${r.onTimePercent.toFixed(1)}% · p95 ${r.p95Ms?.toFixed(1)??'—'}ms · missed ${r.missedCuts}`;}).join('   ');
+    live.textContent=`Display loop ${(1/display).toFixed(1)} Hz · ${bank?'0 active decoders · resident GPU frames':`${clips.length} active decoders`} · PGM reuses deck ${pgm+1}\n`+scores.map((s,i)=>{const r=s.summary(time,display);if(isRemap())return `D${i+1}: ${(unique[i]/Math.max(.1,time)).toFixed(1)} unique fps · source error p95 ${r.sourceErrorP95Ms?.toFixed(1)??'—'}ms`;return `D${i+1}: on time ${r.onTimePercent.toFixed(1)}% · p95 ${r.p95Ms?.toFixed(1)??'—'}ms · missed ${r.missedCuts}`;}).join('   ');
   }
   raf=requestAnimationFrame(tick);
 }
@@ -199,7 +251,7 @@ async function finish(){
   offset=Math.min(clock(),end);playing=false;stopAudio();cancelAnimationFrame(raf);
   const interval=percentile(frameTimes.filter(t=>t<.1),.5)??1/60;
   const stats=adapters.map(a=>a.stats());
-  const result={kind:'musical-run',...settings,elapsed:offset,completed:offset>=end,invalid:[...new Set(invalid)],mainLoopStallsOver100ms:frameTimes.filter(t=>t>.1).length,displayIntervalMs:interval*1000,allDecksReadyMs:readyMs,firstCorrectFrameFromLoadMs:firstMs,peakApplicationCacheBytes:peakCacheBytes,programCuts,observation:'source timestamp validation, then common requestAnimationFrame WebGPU submission; not physical scanout',decks:scores.map((s,i)=>({...s.summary(offset,interval),uniqueFrameFps:unique[i]/offset,presentationUpdates:updates[i],unexpectedFreezeSeconds:freezeSeconds[i],longestExcessSourceErrorSeconds:longestBadDrift[i],stats:stats[i]})),schedule:schedules,raw:scores.map(s=>s.observations)};
+  const result={kind:'musical-run',...settings,elapsed:offset,completed:offset>=end,invalid:[...new Set(invalid)],mainLoopStallsOver100ms:frameTimes.filter(t=>t>.1).length,displayIntervalMs:interval*1000,allDecksReadyMs:readyMs,firstCorrectFrameFromLoadMs:firstMs,peakApplicationCacheBytes:Math.max(peakCacheBytes,stats.reduce((sum,s)=>sum+Number(s.estimatedCacheBytes??0),0)),programCuts,observation:'source timestamp validation, then common requestAnimationFrame WebGPU submission; not physical scanout',decks:scores.map((s,i)=>({...s.summary(offset,interval),uniqueFrameFps:unique[i]/offset,presentationUpdates:updates[i],unexpectedFreezeSeconds:freezeSeconds[i],longestExcessSourceErrorSeconds:longestBadDrift[i],stats:stats[i]})),schedule:schedules,raw:scores.map(s=>s.observations)};
   await persist(result);await cleanup();offset=0;controls(false);play.disabled=false;pause.disabled=true;
   status.textContent='Run saved. Results include missed cuts; no automatic winner declared.';finishRun?.();finishRun=null;
 }
@@ -216,7 +268,7 @@ el('suite').onclick=async()=>{
     const order=[...candidates.slice(trial),...candidates.slice(0,trial)];
     for(const backend of order){
       if(suiteCancelled)break;
-      select('backend').value=backend;select('count').value=String(count);select('duration').value='120';select('pattern').value='audio-stutter4';el<HTMLInputElement>('seed').value=String(42+trial);
+      select('mode').value='cuts';select('trigger').value='legacy';modeControls();select('backend').value=backend;select('count').value=String(count);select('duration').value='120';select('pattern').value='audio-stutter4';el<HTMLInputElement>('seed').value=String(42+trial);
       await new Promise<void>(resolve=>{finishRun=resolve;void begin();});
     }
   }

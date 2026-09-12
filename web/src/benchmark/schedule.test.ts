@@ -48,3 +48,37 @@ test('MIDI stems use their note-on times and retain four repeats through overlap
   expect(decks[2].slice(1).map(e=>Number(e.at.toFixed(3)))).toEqual([10.113,10.593,11.073,11.553]);
   expect(new Set(decks[0].slice(1).map(e=>e.source)).size).toBe(1);
 });
+
+test('speed remapping advances continuously at quarter speed and ramps without jumps',()=>{
+  const slow=buildSchedule(grid,[20],42,8,'speed-quarter')[0];
+  expect(targetAt(slow,4,20).source).toBeCloseTo(1);
+  const ramp=buildSchedule(grid,[20],42,8,'speed-ramp')[0];
+  expect(targetAt(ramp,.5,20).source).toBeCloseTo(.625);
+  expect(targetAt(ramp,1,20).source).toBeCloseTo(1.25);
+  expect(targetAt(ramp,.501,20).source-targetAt(ramp,.5,20).source).toBeCloseTo(.002,5);
+});
+
+test('smash ramps change speed abruptly while keeping source position continuous',()=>{
+  const events=buildSchedule(grid,[20],42,8,'speed-smash')[0];
+  expect(targetAt(events,6,20).source).toBeCloseTo(1.5);
+  expect(targetAt(events,6.25,20).source).toBeCloseTo(2.5);
+  expect(targetAt(events,6.5,20).source).toBeCloseTo(3.5);
+  expect(targetAt(events,8,20).source).toBeCloseTo(5);
+});
+
+test('analyzed vocal triggers use audio event times without needing MIDI notes',()=>{
+  const analyzed={...grid,triggerChannels:[{name:'vocals',events:[{time:.37,strength:.8},{time:.38,strength:.9}]}]};
+  const events=buildSchedule(analyzed,[12],42,2,'sixteenth')[0];
+  expect(events.slice(1).map(e=>Number(e.at.toFixed(3)))).toEqual([.37,.495,.62,.745]);
+  expect(events[1].pattern).toBe('vocals-stutter4-sixteenth');
+  expect(buildSchedule(analyzed,[12],42,2,'cuts-only')[0]).toHaveLength(1);
+});
+
+test('triggered ramps differ across decks while preserving source position at every boundary',()=>{
+  const triggered={...grid,triggerChannels:[{name:'vocals',events:Array.from({length:30},(_,i)=>({time:.3+i*.3,strength:1}))}]};
+  const schedules=buildSchedule(triggered,[20,20],42,8,'speed-ramp');
+  expect(schedules[0].filter(e=>e.rampPeriod).map(e=>e.at)).not.toEqual(schedules[1].filter(e=>e.rampPeriod).map(e=>e.at));
+  for(const events of schedules)for(let i=1;i<events.length;i++){
+    expect(targetAt(events.slice(0,i),events[i].at,20).source).toBeCloseTo(events[i].source,6);
+  }
+});
