@@ -6,8 +6,15 @@ Shared behavioral oracle fixtures live in `../fixtures/`.
 
 ## Run tests
 
+From repo root:
+
 ```bash
-cd core/zig
+bun run test:zig
+```
+
+Or from this directory:
+
+```bash
 zig build test
 ```
 
