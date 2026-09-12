@@ -39,7 +39,7 @@ if (!workerArtifact) {
 }
 
 const wasmPath = join(outDir, 'remap.wasm');
-const wasmFile = existsSync(wasmPath) ? Bun.file(wasmPath) : null;
+const wasmFile = wasmBuild.status === 0 && existsSync(wasmPath) ? Bun.file(wasmPath) : null;
 
 async function fixtureResponse(pathname: string): Promise<Response | null> {
   if (!pathname.startsWith('/fixtures/')) return null;

@@ -1,55 +1,39 @@
-import { EncodedPacketSink, Input, MP4, UrlSource } from 'mediabunny';
+import { Input, MP4, UrlSource, VideoSampleSink, type VideoSample } from 'mediabunny';
 
 export interface FixtureDecoderReadyInfo {
   readonly width: number;
   readonly height: number;
-  readonly frameCount: number;
   readonly durationSeconds: number;
   readonly fps: number;
 }
 
 export interface FixtureDecoderOptions {
   readonly clipUrl: string;
+  /** Consumed synchronously; the decoder closes the frame after this callback. */
   readonly onFrame: (frame: VideoFrame) => void;
   readonly onBuffering?: (decodedFrames: number) => void;
   readonly onReady?: (info: FixtureDecoderReadyInfo) => void;
   readonly onError: (message: string) => void;
 }
 
-interface DecodedFrame {
-  timestampUs: number;
-  frame: VideoFrame;
-}
-
-/**
- * Decode the full fixture clip once, then loop it at real-time via indexed rAF lookup.
- */
+/** Play a bounded, presentation-ordered WebCodecs stream, decoding anew on each loop. */
 export class FixtureDecoder {
-  private readonly options: FixtureDecoderOptions;
   private disposed = false;
+  private started = false;
+  private input: Input | null = null;
+  private samples: AsyncGenerator<VideoSample, void, unknown> | null = null;
   private rafId = 0;
-  private durationSeconds = 0;
-  private playbackStartMs = 0;
-  private frames: DecodedFrame[] = [];
-  private timelineStartUs = 0;
-  private timelineEndUs = 0;
-  private lastPresentedTimestampUs = -1;
-  private decodeComplete = false;
-  private displayWidth = 0;
-  private displayHeight = 0;
-  private presenting = false;
-  private previewShown = false;
+  private wakePresentation: (() => void) | null = null;
 
-  constructor(options: FixtureDecoderOptions) {
-    this.options = options;
-  }
+  constructor(private readonly options: FixtureDecoderOptions) {}
 
   start(): void {
+    if (this.started || this.disposed) return;
+    this.started = true;
     if (typeof VideoDecoder === 'undefined') {
       this.options.onError('WebCodecs VideoDecoder unavailable');
       return;
     }
-
     this.options.onBuffering?.(0);
     void this.bootstrap();
   }
@@ -60,145 +44,107 @@ export class FixtureDecoder {
         formats: [MP4],
         source: new UrlSource(this.options.clipUrl),
       });
-
+      this.input = input;
       const videoTrack = await input.getPrimaryVideoTrack();
-      if (!videoTrack) {
-        throw new Error('Fixture clip has no video track');
+      if (this.disposed) return;
+      if (!videoTrack) throw new Error('Fixture clip has no video track');
+
+      const durationSeconds = await videoTrack.computeDuration();
+      if (this.disposed) return;
+      if (!Number.isFinite(durationSeconds) || durationSeconds <= 0) {
+        throw new Error('Fixture clip has no positive duration');
       }
+      const width = await videoTrack.getDisplayWidth();
+      const height = await videoTrack.getDisplayHeight();
+      if (this.disposed) return;
 
-      this.durationSeconds = await videoTrack.computeDuration();
-      const decoderConfig = await videoTrack.getDecoderConfig();
-      if (!decoderConfig) {
-        throw new Error('Fixture clip missing VideoDecoderConfig');
+      // The sink bounds decoded samples + queued decode requests and handles
+      // B-frame ordering. Await presentation before pulling the next sample so
+      // its look-ahead stays bounded even while rAF is paused in a hidden tab.
+      const sink = new VideoSampleSink(videoTrack);
+      let ready = false;
+      while (!this.disposed) {
+        const samples = sink.samples();
+        this.samples = samples;
+        let firstTimestamp: number | null = null;
+        let playbackStartMs = 0;
+        try {
+          for await (const sample of samples) {
+            try {
+              // A pending next() can resolve after stop(). Own and close that
+              // late sample without converting or presenting it.
+              if (this.disposed) break;
+              if (firstTimestamp === null) {
+                firstTimestamp = sample.timestamp;
+                playbackStartMs = performance.now();
+                if (!ready) {
+                  ready = true;
+                  this.options.onReady?.({
+                    width, height, durationSeconds,
+                    fps: sample.duration > 0 ? 1 / sample.duration : 0,
+                  });
+                }
+              }
+              const dueMs = playbackStartMs + (sample.timestamp - firstTimestamp) * 1000;
+              await this.waitUntil(dueMs);
+              if (this.disposed) break;
+              // Drop expired frames after a stall instead of playing a backlog.
+              if (sample.duration > 0 && performance.now() >= dueMs + sample.duration * 1000) {
+                continue;
+              }
+              const frame = sample.toVideoFrame();
+              try {
+                this.options.onFrame(frame);
+              } finally {
+                frame.close();
+              }
+            } finally {
+              sample.close();
+            }
+          }
+        } finally {
+          await samples.return();
+          this.samples = null;
+        }
+        if (this.disposed) return;
+        if (firstTimestamp === null) throw new Error('Fixture clip produced no decoded frames');
+        // Hold the final image for the rest of its duration before restarting.
+        await this.waitUntil(playbackStartMs + durationSeconds * 1000);
       }
-
-      const support = await VideoDecoder.isConfigSupported(decoderConfig);
-      if (!support.supported) {
-        throw new Error('VideoDecoderConfig not supported in this browser');
-      }
-
-      this.displayWidth = await videoTrack.getDisplayWidth();
-      this.displayHeight = await videoTrack.getDisplayHeight();
-      const sink = new EncodedPacketSink(videoTrack);
-
-      const decoder = new VideoDecoder({
-        output: (frame) => {
-          this.onDecodedFrame(frame.timestamp, frame.clone());
-          frame.close();
-        },
-        error: (error) => {
-          this.options.onError(error.message);
-        },
-      });
-
-      decoder.configure(decoderConfig);
-
-      for await (const packet of sink.packets()) {
-        if (this.disposed) break;
-        decoder.decode(packet.toEncodedVideoChunk());
-      }
-
-      await decoder.flush();
-      decoder.close();
-
-      if (this.frames.length === 0) {
-        throw new Error('Fixture clip produced no decoded frames');
-      }
-
-      this.frames.sort((a, b) => a.timestampUs - b.timestampUs);
-      this.timelineStartUs = this.frames[0].timestampUs;
-      this.timelineEndUs = this.frames[this.frames.length - 1].timestampUs;
-      this.decodeComplete = true;
-      this.emitReady();
-      this.beginPlayback();
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      this.options.onError(message);
-    }
-  }
-
-  private onDecodedFrame(timestampUs: number, frame: VideoFrame): void {
-    this.frames.push({ timestampUs, frame });
-
-    if (!this.previewShown) {
-      this.previewShown = true;
-      this.options.onFrame(frame);
-    }
-
-    if (this.frames.length % 24 === 0) {
-      this.options.onBuffering?.(this.frames.length);
-    }
-  }
-
-  private beginPlayback(): void {
-    if (this.presenting || this.disposed || !this.decodeComplete) return;
-
-    this.presenting = true;
-    this.playbackStartMs = performance.now();
-    this.lastPresentedTimestampUs = -1;
-    this.options.onBuffering?.(this.frames.length);
-    this.startPresentLoop();
-  }
-
-  private emitReady(): void {
-    const timelineSpanUs = Math.max(1, this.timelineEndUs - this.timelineStartUs);
-    const fps =
-      this.durationSeconds > 0
-        ? this.frames.length / this.durationSeconds
-        : this.frames.length / (timelineSpanUs / 1_000_000);
-
-    this.options.onReady?.({
-      width: this.displayWidth,
-      height: this.displayHeight,
-      frameCount: this.frames.length,
-      durationSeconds: this.durationSeconds,
-      fps,
-    });
-  }
-
-  private frameAtTimestampUs(targetUs: number): VideoFrame {
-    let selected = this.frames[0];
-    for (const entry of this.frames) {
-      if (entry.timestampUs <= targetUs) {
-        selected = entry;
-      } else {
-        break;
+      if (!this.disposed) {
+        this.options.onError(error instanceof Error ? error.message : String(error));
       }
+    } finally {
+      this.stop();
     }
-    return selected.frame;
   }
 
-  private startPresentLoop(): void {
-    const loopUs =
-      this.durationSeconds > 0
-        ? this.durationSeconds * 1_000_000
-        : Math.max(1, this.timelineEndUs - this.timelineStartUs);
-
-    const presentLoop = (): void => {
-      if (this.disposed || this.frames.length === 0) return;
-
-      const elapsedUs = (performance.now() - this.playbackStartMs) * 1000;
-      const phaseUs = elapsedUs % loopUs;
-      const targetUs = this.timelineStartUs + phaseUs;
-
-      if (targetUs !== this.lastPresentedTimestampUs) {
-        this.lastPresentedTimestampUs = targetUs;
-        this.options.onFrame(this.frameAtTimestampUs(targetUs));
-      }
-
-      this.rafId = requestAnimationFrame(presentLoop);
-    };
-
-    this.rafId = requestAnimationFrame(presentLoop);
+  private async waitUntil(dueMs: number): Promise<void> {
+    while (!this.disposed && performance.now() < dueMs) {
+      await new Promise<void>((resolve) => {
+        this.wakePresentation = resolve;
+        this.rafId = requestAnimationFrame(() => {
+          this.rafId = 0;
+          this.wakePresentation = null;
+          resolve();
+        });
+      });
+    }
   }
 
   stop(): void {
+    if (this.disposed) return;
     this.disposed = true;
     if (this.rafId) cancelAnimationFrame(this.rafId);
-    for (const entry of this.frames) {
-      entry.frame.close();
-    }
-    this.frames = [];
+    this.rafId = 0;
+    this.wakePresentation?.();
+    this.wakePresentation = null;
+    // return() releases prefetched samples and wakes a pending next(); dispose
+    // cancels outstanding reads and closes the sink's underlying decoder.
+    void this.samples?.return();
+    this.input?.dispose();
+    this.input = null;
   }
 }
 

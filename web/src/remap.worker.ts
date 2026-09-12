@@ -1,6 +1,6 @@
 /// <reference lib="webworker" />
 
-import type { RemapFrameMessage, WorkerInbound } from './protocol';
+import type { RemapFrameMessage, RemapStatusMessage, WorkerInbound } from './protocol';
 
 interface RemapWasmExports {
   remap_init(
@@ -34,7 +34,13 @@ async function initWasm(): Promise<void> {
     const { instance } = await WebAssembly.instantiate(bytes, {});
     const exports = instance.exports as unknown as RemapWasmExports;
 
-    if (typeof exports.remap_init !== 'function' || typeof exports.remap_tick !== 'function') {
+    if (
+      typeof exports.remap_init !== 'function' ||
+      typeof exports.remap_tick !== 'function' ||
+      typeof exports.remap_active_slice !== 'function' ||
+      typeof exports.remap_loop_iteration !== 'function' ||
+      typeof exports.remap_stutter_active !== 'function'
+    ) {
       throw new Error('remap.wasm missing exports');
     }
 
@@ -46,6 +52,11 @@ async function initWasm(): Promise<void> {
     wasmExports = null;
     console.warn('[remap.worker] WASM unavailable, using stub', error);
   }
+  const status: RemapStatusMessage = {
+    type: 'remap-status',
+    mode: wasmReady ? 'wasm' : 'fallback',
+  };
+  self.postMessage(status);
 }
 
 function postRemapFrame(clockSeconds: number): void {

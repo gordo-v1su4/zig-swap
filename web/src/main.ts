@@ -1,5 +1,5 @@
 import { FixtureDecoder } from './fixture-decoder';
-import { isRemapFrameMessage, type RemapFrameMessage } from './protocol';
+import { isRemapFrameMessage, isRemapStatusMessage, type RemapFrameMessage } from './protocol';
 import { PgmBlitter } from './pgm-blitter';
 
 const canvas = document.querySelector<HTMLCanvasElement>('#pgm');
@@ -64,6 +64,11 @@ async function boot(): Promise<void> {
 
   worker = new Worker('/remap.worker.js', { type: 'module' });
   worker.onmessage = (event: MessageEvent) => {
+    if (isRemapStatusMessage(event.data)) {
+      wasmLabel = event.data.mode === 'wasm' ? 'Zig WASM' : 'stub fallback (WASM unavailable)';
+      updateOverlay();
+      return;
+    }
     if (!isRemapFrameMessage(event.data)) return;
     lastFrame = event.data;
     updateOverlay();
@@ -78,7 +83,6 @@ async function boot(): Promise<void> {
     sourceDurationSeconds: beats.durationSeconds,
     beatIntervalSeconds: beats.beatIntervalSeconds,
   });
-  wasmLabel = 'Zig WASM';
   updateOverlay();
 
   decoder = new FixtureDecoder({

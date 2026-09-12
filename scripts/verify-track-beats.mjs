@@ -43,8 +43,12 @@ if (typeof record.bpm !== 'number' || !Number.isFinite(record.bpm)) {
 if (!Array.isArray(record.beats) || record.beats.length === 0) {
   fail('beats must be a non-empty array');
 }
-if (typeof record.duration !== 'number' || !Number.isFinite(record.duration)) {
-  fail('duration must be a finite number');
+if (
+  typeof record.duration !== 'number' ||
+  !Number.isFinite(record.duration) ||
+  record.duration <= 0
+) {
+  fail('duration must be a positive finite number');
 }
 if (record.locked !== true) {
   fail('locked must be true for runtime consumption');
