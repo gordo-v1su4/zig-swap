@@ -57,3 +57,7 @@ Single-context layout: root `CONTEXT.md` and `docs/adr/`. See `docs/agents/domai
 ### Toolchain
 
 **bun** / **bunx** for JS/TS; **uv** for Python. Never npm, npx, pip. See `docs/agents/continuity.md`.
+
+### Automation
+
+Hands-off loop: Linear frontier → `/implement` → PR → Done. See `docs/agents/automation.md` and `workflows/agent-automation-loop.md`.

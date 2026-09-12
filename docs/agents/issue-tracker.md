@@ -54,3 +54,7 @@ Used by `/wayfinder`. The **map** is a parent issue; **child tickets** are sub-i
 ## Pull requests
 
 PRs stay on GitHub. Link PRs to Linear issues via `links` or Linear's GitHub integration if enabled. External PRs are **not** a triage surface for zig-swap.
+
+## Hands-off agent loop
+
+See **`docs/agents/automation.md`**. Operator assigns frontier tickets (`ready-for-agent`, no blockers). Agents run one ticket per session via `/implement`. Parent spec: **V1S-69**.
