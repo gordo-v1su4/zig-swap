@@ -4,6 +4,8 @@
   "type": "module",
   "scripts": {
     "fixtures:generate": "bun run core/fixtures/generate-timesampler-fixtures.mjs",
-    "prep:analyze": "bun run prep/scripts/analyze-track.mjs"
+    "prep:analyze": "bun run prep/scripts/analyze-track.mjs",
+    "test:rust": "cargo test --manifest-path core/rust/Cargo.toml",
+    "test:zig": "zig build test --cwd core/zig"
   }
 }

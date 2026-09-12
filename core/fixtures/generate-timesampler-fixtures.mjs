@@ -47,6 +47,50 @@ function pickState(state) {
   };
 }
 
+/** Full reducer state for native spike harness replay (V1S-73, V1S-74). */
+function serializeFullState(state) {
+  if (state === null) return null;
+  return {
+    activeSlice: state.activeSlice,
+    pongDirection: state.pongDirection,
+    loopIteration: state.loopIteration,
+    jumpGeneration: state.jumpGeneration,
+    discontinuityGeneration: state.discontinuityGeneration,
+    nextBoundaryBeat: state.nextBoundaryBeat,
+    sliceStartedBeat: state.sliceStartedBeat,
+    sourceAnchorTransportSeconds: state.sourceAnchorTransportSeconds,
+    sourceAnchorOffsetSeconds: state.sourceAnchorOffsetSeconds,
+    beatIntervalSeconds: state.beatIntervalSeconds,
+    rndSeed: state.rndSeed,
+    rndState: state.rndState,
+    forcedJumpSeed: state.forcedJumpSeed,
+    forcedJumpState: state.forcedJumpState,
+    pendingTrigger: state.pendingTrigger,
+    lastAcceptedOnsetTransportSeconds: state.lastAcceptedOnsetTransportSeconds,
+    sourceDurationSeconds: state.sourceDurationSeconds,
+    sliceCount: state.sliceCount,
+    mode: state.mode,
+    jumpSizeBeats: state.jumpSizeBeats,
+    loopCount: state.loopCount,
+    playbackRate: state.playbackRate,
+    accentMode: state.accentMode,
+    feel: state.feel,
+    queuedParams: state.queuedParams,
+    lastTransportSeconds: state.lastTransportSeconds,
+    lastBeatPosition: state.lastBeatPosition,
+  };
+}
+
+function reducerInput(previousState, transport, triggers, params) {
+  return {
+    previousState: previousState === null ? null : pickState(previousState),
+    fullPreviousState: serializeFullState(previousState),
+    transport,
+    triggers,
+    params,
+  };
+}
+
 function baseTransport(overrides = {}) {
   return {
     transportSeconds: 0,
@@ -91,12 +135,7 @@ function runReducerCase(name, previousState, transport, triggers, params) {
 
   return {
     name,
-    input: {
-      previousState,
-      transport,
-      triggers,
-      params,
-    },
+    input: reducerInput(previousState, transport, triggers, params),
     expected: {
       output: pickOutput(reduction.output),
       nextState: pickState(reduction.nextState),
@@ -163,12 +202,7 @@ for (const step of [
   const reduction = reduceTimeSampler(state, transport, [], params);
   scheduledCases.push({
     name: label,
-    input: {
-      previousState: pickState(state),
-      transport,
-      triggers: [],
-      params,
-    },
+    input: reducerInput(state, transport, [], params),
     expected: {
       output: pickOutput(reduction.output),
       nextState: pickState(reduction.nextState),
@@ -210,12 +244,12 @@ writeFixture('seek-settlement-discontinuity.json', {
   cases: [
     {
       name: 'transport-rewind-resets-slice',
-      input: {
-        previousState: pickState(seekBase.nextState),
-        transport: seekTransport,
-        triggers: [],
-        params: baseParams({ mode: 'FWD', loopCount: 1, jumpSizeBeats: 1 }),
-      },
+      input: reducerInput(
+        seekBase.nextState,
+        seekTransport,
+        [],
+        baseParams({ mode: 'FWD', loopCount: 1, jumpSizeBeats: 1 }),
+      ),
       expected: {
         output: pickOutput(seekReduction.output),
         nextState: pickState(seekReduction.nextState),
@@ -247,12 +281,12 @@ writeFixture('chop-reducer-forced-trigger.json', {
   cases: [
     {
       name: 'manual-trigger-forced-jump',
-      input: {
-        previousState: pickState(forcedInit.nextState),
-        transport: forcedTransport,
-        triggers: [{ type: 'manual-trigger', transportSeconds: 0.5 }],
-        params: baseParams({ mode: 'FWD', sliceCount: 8, loopCount: 4, jumpSizeBeats: 1 }),
-      },
+      input: reducerInput(
+        forcedInit.nextState,
+        forcedTransport,
+        [{ type: 'manual-trigger', transportSeconds: 0.5 }],
+        baseParams({ mode: 'FWD', sliceCount: 8, loopCount: 4, jumpSizeBeats: 1 }),
+      ),
       expected: {
         output: pickOutput(forcedReduction.output),
         nextState: pickState(forcedReduction.nextState),
@@ -269,7 +303,7 @@ const pongInit = createTimeSamplerState(
 let pongState = pongInit.nextState;
 const pongCases = [pongInit].map((r) => ({
   name: 'pong-initial',
-  input: { previousState: null, transport: baseTransport(), triggers: [], params: baseParams({ mode: 'PONG', sliceCount: 3, loopCount: 1 }) },
+  input: reducerInput(null, baseTransport(), [], baseParams({ mode: 'PONG', sliceCount: 3, loopCount: 1, jumpSizeBeats: 1 })),
   expected: { output: pickOutput(r.output), nextState: pickState(r.nextState) },
 }));
 
@@ -279,12 +313,7 @@ for (let i = 1; i <= 3; i += 1) {
   const reduction = reduceTimeSampler(pongState, transport, [], params);
   pongCases.push({
     name: `pong-boundary-${i}`,
-    input: {
-      previousState: pickState(pongState),
-      transport,
-      triggers: [],
-      params,
-    },
+    input: reducerInput(pongState, transport, [], params),
     expected: {
       output: pickOutput(reduction.output),
       nextState: pickState(reduction.nextState),
@@ -320,12 +349,12 @@ writeFixture('chop-reducer-rnd.json', {
   cases: [
     {
       name: 'rnd-seeded-jump',
-      input: {
-        previousState: pickState(rndInit.nextState),
-        transport: rndTransport,
-        triggers: [],
-        params: baseParams({ mode: 'RND', sliceCount: 6, loopCount: 1, jumpSizeBeats: 1, randomSeed: 0xdeadbeef }),
-      },
+      input: reducerInput(
+        rndInit.nextState,
+        rndTransport,
+        [],
+        baseParams({ mode: 'RND', sliceCount: 6, loopCount: 1, jumpSizeBeats: 1, randomSeed: 0xdeadbeef }),
+      ),
       expected: {
         output: pickOutput(rndReduction.output),
         nextState: pickState(rndReduction.nextState),

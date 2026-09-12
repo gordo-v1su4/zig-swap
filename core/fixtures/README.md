@@ -25,7 +25,9 @@ Zig/Rust spike harnesses (V1S-73, V1S-74) load these JSON files and must match `
 | `chop-reducer-rnd.json` | RND with fixed `randomSeed` |
 | `seek-settlement-discontinuity.json` | Transport rewind → discontinuity reset |
 
-Each case has `input` (transport, params, optional prior state) and `expected` (`output` + key `nextState` fields).
+Each case has `input` (transport, params, triggers) and `expected` (`output` + key `nextState` fields).
+
+Reducer cases also include `input.fullPreviousState` (complete reducer state for replay). When null, the harness calls `createTimeSamplerState`; otherwise `reduceTimeSampler`.
 
 ## Regenerate
 
