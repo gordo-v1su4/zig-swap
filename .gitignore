@@ -8,9 +8,14 @@ prep/fixtures/test-media/audio/track-excerpt.mp3
 .scratch/
 prep/.env
 
-# Rust spike build artifacts
-core/rust/target/
+# Rust spike build artifacts (archived)
+core/archive/rust-spike/target/
 
 # Zig spike build artifacts
 core/zig/.zig-cache/
 core/zig/zig-out/
+
+# Bun web dev bundle cache
+web/.dev/
+
+node_modules/

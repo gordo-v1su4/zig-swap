@@ -2,11 +2,10 @@
 
 WASM **remap engine** for Stack C: beat grid lookup, chop reducer, seek settlement.
 
-Parallel spike targets:
+**Implementation:** `core/zig/` (Zig 0.16+, `wasm32-freestanding` target for browser worker).
 
-- `core/zig/` — Zig 0.16+ (candidate)
-- `core/rust/` — Rust (comparison)
+**Comparison spike (archived):** `core/archive/rust-spike/` — passed same fixtures; not shipped (ADR-0008).
 
-Behavior oracle: `webgpu-research` lab `timesampler/` package. Shared fixtures land in `core/fixtures/` (V1S-71).
+Behavior oracle: `webgpu-research` lab `timesampler/` package. Shared fixtures: `core/fixtures/`.
 
-Worker posts `{ sourceTime, chopState }` to main each frame (ADR-0003).
+Worker posts `{ sourceTimeSeconds, chopState }` to main each frame (ADR-0003). See `web/README.md` for the TS message contract.
