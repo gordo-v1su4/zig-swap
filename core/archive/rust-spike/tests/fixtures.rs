@@ -11,7 +11,7 @@ use timesampler::{
 const EPSILON: f64 = 1e-9;
 
 fn fixtures_dir() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR")).join("../fixtures")
+    Path::new(env!("CARGO_MANIFEST_DIR")).join("../../fixtures")
 }
 
 fn approx_eq(a: f64, b: f64) -> bool {
