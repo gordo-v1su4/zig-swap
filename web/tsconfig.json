@@ -5,7 +5,7 @@
     "moduleResolution": "bundler",
     "strict": true,
     "noEmit": true,
-    "lib": ["ES2022", "DOM", "WebWorker"],
+    "lib": ["ES2022", "DOM", "WebWorker", "DOM.Iterable"],
     "types": ["bun-types"],
     "skipLibCheck": true
   },

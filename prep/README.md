@@ -35,6 +35,16 @@ bun run prep/scripts/analyze-track.mjs
 
 **Input:** `prep/fixtures/test-media/audio/Love me tonight (fullsong).wav`
 
+## Verify locked analysis (V1S-77)
+
+When `track.beats.json` is committed or freshly generated:
+
+```bash
+bun run prep:verify
+```
+
+Re-run `prep:analyze` only when fixture audio changes or you need to regenerate the grid.
+
 ## Toolchain
 
 - **bun** / **bunx** for JS scripts — never npm/npx
