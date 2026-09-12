@@ -1,0 +1,20 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Musical playback comparison</title>
+<style>
+:root{color-scheme:dark;font-family:system-ui;background:#111113;color:#e4e4e7}body{margin:20px auto;max-width:1440px;padding:0 20px}h1{font-size:24px;margin:0}p{color:#a1a1aa}header,.controls{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:12px 0}button,select,input{font:inherit;color:inherit;background:#27272a;border:1px solid #52525b;padding:9px;border-radius:3px}button{cursor:pointer}button:disabled{opacity:.4}label{font-size:12px;display:grid;gap:4px}input[type=number]{width:90px}input[type=range]{appearance:none;height:3px;width:130px;padding:0}input[type=range]::-webkit-slider-thumb{appearance:none;width:9px;height:25px;background:#fafafa;border-radius:0}#screen{width:100%;aspect-ratio:32/21;background:black;display:block}#status{min-height:24px;color:#facc15}#decks{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;font:12px monospace}#decks>div{background:#202023;padding:8px;white-space:pre-line;border-left:3px solid #52525b}#live{font:14px monospace;padding:12px;background:#202023;white-space:pre-wrap}#reports{overflow:auto;max-height:320px;white-space:pre-wrap;font:12px monospace}a{color:#d4d4d8}.note{font-size:12px}#libmedia-probe{width:640px;height:360px}details{margin:16px 0}#beat{font-size:20px;font-variant-numeric:tabular-nums}
+</style></head><body>
+<header><h1>Musical playback comparison</h1><span id="beat">Ready</span><a href="/seek-benchmark">Old serial diagnostic</a></header>
+<p>Eight independent decks · one music clock · hard cuts · program view reuses a deck</p>
+<div class="controls">
+<label>Playback<select id="backend"><option value="beatsmaxxer">Beatmaxxer pool</option><option value="gpu-bank" selected>Preloaded GPU textures</option><option value="mediabunny">Mediabunny / WebCodecs</option><option value="libmedia">libmedia (capability gate)</option></select></label>
+<label>Active decks<select id="count"><option>1</option><option>4</option><option>6</option><option selected>8</option></select></label>
+<label>Frame memory cap<select id="budget"><option value="256">256 MiB</option><option value="12288" selected>12 GiB · resident test</option></select></label><label>Media<select id="resolution"><option>720</option><option>1080</option></select></label>
+<label>Program view<select id="view"><option value="switch">Switch decks on triggers</option><option value="fixed">Hold deck 1</option></select></label><label>Pattern<select id="pattern"></select></label><label>Groove<select id="groove"><option value="straight">Straight</option><option value="varied">Straight / swing / dotted</option></select></label><label>Seed<input id="seed" type="number" value="42"></label>
+<label>Duration<select id="duration"><option value="30">30 s preview</option><option value="60" selected>1 min preview</option><option value="120">2 min scored</option><option value="600">10 min soak</option></select></label>
+<label>Volume<input id="volume" type="range" min="0" max="1" step=".05" value=".35"></label>
+<button id="play">Play</button><button id="pause" disabled>Pause</button><button id="reset">Reset</button><button id="suite">Run comparison suite</button><button id="download">Download results</button>
+</div>
+<div id="status">Loading fixture manifest…</div><canvas id="screen" width="1920" height="1260"></canvas>
+<div id="decks"></div><div id="live">No run yet.</div>
+<p class="note">FPS counts unique source frames at the common presentation loop. Timing uses browser observations and GPU submission, not measured physical scanout. Decoder and driver memory are not fully observable. 32nd/64th notes are separate stress tests.</p>
+<details><summary>Results and integration gate</summary><pre id="reports"></pre><div id="libmedia-probe"></div></details>
+<script type="module" src="./src/benchmark/main.ts"></script></body></html>

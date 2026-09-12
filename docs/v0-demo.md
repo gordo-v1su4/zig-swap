@@ -17,9 +17,12 @@ The rectangular scrub handle follows the dark Beatsmaxxer Pro styling, enlarged
 to 8 by 20 pixels for this layout. It supports arrow keys, Home, and End.
 
 The frame source keeps one serial decode stream with bounded Mediabunny look-ahead
-and one pending timestamp request. Forward playback reuses the stream; backwards
-chops and distant scrubs reopen it at the requested source region. Superseded seek
-results are discarded, and samples and VideoFrames close after presentation.
+and one pending timestamp request. A bounded owned-image cache reuses recent frames
+for repeated chops; misses reopen decoding when needed. Superseded seek results
+are discarded, and decoder samples and presentation VideoFrames close promptly.
+The cache holds at most 48 images and 64 MiB of estimated RGBA data per source;
+decoder/driver memory is additional. Diagnostics links to `/benchmark` to compare
+the cache on identical footage. See [measured results and limits](seek-benchmark.md).
 
 Video duration and locked-analysis duration are separate: the fixture clip loops
 through its own source slices while the clock follows the full locked beat grid.
@@ -38,5 +41,5 @@ The worker reports its actual WASM/fallback state. A failed current WASM build
 returns HTTP 404 for `/remap.wasm`, even when an earlier artifact remains on disk.
 Fallback supports transport and scrubbing but does not provide Zig grid chops.
 
-V1S-80's separate PR-merge acceptance criterion must be completed before marking
-the issue Done.
+V1S-80 code reached main at `e7ef02f`. Linear's demo-comment requirement and the
+V1S-81 operator acceptance remain separate; these measurements do not close v0.

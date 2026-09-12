@@ -1,0 +1,485 @@
+{
+  "version": 1,
+  "clips": [
+    {
+      "id": 1,
+      "sourceFile": "hf_20260715_062639_f4cb0e8d-234d-48d3-9c3f-365cb650156a.mp4",
+      "sourceSha256": "861c58844d2e8aeede08f582b44ecb53f9febc94f7ffbcb736425045b8e39c2d",
+      "original": {
+        "codec": "h264",
+        "width": 1280,
+        "height": 720,
+        "fps": 24,
+        "duration": 14.166667,
+        "keyframes": [
+          0,
+          1.5,
+          4.125,
+          6.5,
+          8.041667,
+          12.166667
+        ],
+        "maxKeyframeGapSeconds": 4.125
+      },
+      "variants": {
+        "720": {
+          "url": "/fixtures/test-media/benchmark/deck-1-720.mp4",
+          "sha256": "f62ad25ef4b32c54cff87cb74e2c83245f4ace6d969db00becb533a772b19a81",
+          "codec": "h264",
+          "width": 1280,
+          "height": 720,
+          "fps": 24,
+          "duration": 12,
+          "keyframes": [
+            0,
+            2,
+            4,
+            6,
+            8,
+            10
+          ],
+          "maxKeyframeGapSeconds": 2,
+          "upscaled": false
+        },
+        "1080": {
+          "url": "/fixtures/test-media/benchmark/deck-1-1080.mp4",
+          "sha256": "85add846e80cc173da1645b6263f389718484e6f36e49727336f1e9aed1d44b4",
+          "codec": "h264",
+          "width": 1920,
+          "height": 1080,
+          "fps": 24,
+          "duration": 12,
+          "keyframes": [
+            0,
+            2,
+            4,
+            6,
+            8,
+            10
+          ],
+          "maxKeyframeGapSeconds": 2,
+          "upscaled": true
+        }
+      }
+    },
+    {
+      "id": 2,
+      "sourceFile": "hf_20260715_073127_6a4af81a-405b-4f5e-8969-e857cde895c4.mp4",
+      "sourceSha256": "0d23c116309f6c4c5c6199cb50acd936e86d8665ae74054f1eb91339b8bf5795",
+      "original": {
+        "codec": "h264",
+        "width": 1280,
+        "height": 720,
+        "fps": 24,
+        "duration": 14.666667,
+        "keyframes": [
+          0,
+          4.541667,
+          6.416667,
+          9.333333,
+          12.25
+        ],
+        "maxKeyframeGapSeconds": 4.541667
+      },
+      "variants": {
+        "720": {
+          "url": "/fixtures/test-media/benchmark/deck-2-720.mp4",
+          "sha256": "dd3362d1fa3f1ad2851ac6133643323cd3bb56d3b00fb835ce29cf23d5cf840b",
+          "codec": "h264",
+          "width": 1280,
+          "height": 720,
+          "fps": 24,
+          "duration": 12,
+          "keyframes": [
+            0,
+            2,
+            4,
+            6,
+            8,
+            10
+          ],
+          "maxKeyframeGapSeconds": 2,
+          "upscaled": false
+        },
+        "1080": {
+          "url": "/fixtures/test-media/benchmark/deck-2-1080.mp4",
+          "sha256": "a0363a20d39656ea587d168b15e0b978c6b06ca4d06a21fe89091eb6e0fd1128",
+          "codec": "h264",
+          "width": 1920,
+          "height": 1080,
+          "fps": 24,
+          "duration": 12,
+          "keyframes": [
+            0,
+            2,
+            4,
+            6,
+            8,
+            10
+          ],
+          "maxKeyframeGapSeconds": 2,
+          "upscaled": true
+        }
+      }
+    },
+    {
+      "id": 3,
+      "sourceFile": "hf_20260715_081736_8fa310e9-707b-4760-b96d-dcacc0924da7.mp4",
+      "sourceSha256": "f6d9912b3e9b0827a9d04e0649a635a018be1fc9935df7829ca7b902d2d8e758",
+      "original": {
+        "codec": "h264",
+        "width": 1280,
+        "height": 720,
+        "fps": 24,
+        "duration": 14.375,
+        "keyframes": [
+          0,
+          4.5,
+          6.416667,
+          12.166667
+        ],
+        "maxKeyframeGapSeconds": 5.75
+      },
+      "variants": {
+        "720": {
+          "url": "/fixtures/test-media/benchmark/deck-3-720.mp4",
+          "sha256": "6bacfd4a8d7c8d8091157d1787bb3083381acd568bf9f5fe73e820db5ba011ad",
+          "codec": "h264",
+          "width": 1280,
+          "height": 720,
+          "fps": 24,
+          "duration": 12,
+          "keyframes": [
+            0,
+            2,
+            4,
+            6,
+            8,
+            10
+          ],
+          "maxKeyframeGapSeconds": 2,
+          "upscaled": false
+        },
+        "1080": {
+          "url": "/fixtures/test-media/benchmark/deck-3-1080.mp4",
+          "sha256": "118d502c6aeaf939e80a26693f150940416a78d1c32813606be2a0d756c5ba49",
+          "codec": "h264",
+          "width": 1920,
+          "height": 1080,
+          "fps": 24,
+          "duration": 12,
+          "keyframes": [
+            0,
+            2,
+            4,
+            6,
+            8,
+            10
+          ],
+          "maxKeyframeGapSeconds": 2,
+          "upscaled": true
+        }
+      }
+    },
+    {
+      "id": 4,
+      "sourceFile": "hf_20260715_165127_8bb294ab-8a6d-4851-b877-27465d118317.mp4",
+      "sourceSha256": "5f5027fef25e282857fd31b13c051cced179e23ec5858f7eb95ed9b517e3948f",
+      "original": {
+        "codec": "h264",
+        "width": 1280,
+        "height": 720,
+        "fps": 24,
+        "duration": 9.125,
+        "keyframes": [
+          0,
+          3.916667,
+          6.416667
+        ],
+        "maxKeyframeGapSeconds": 3.916667
+      },
+      "variants": {
+        "720": {
+          "url": "/fixtures/test-media/benchmark/deck-4-720.mp4",
+          "sha256": "a5ddae3f81e38ff7705a6632cf2a993c45478a148ea38d655b2784a9bbd6e0a7",
+          "codec": "h264",
+          "width": 1280,
+          "height": 720,
+          "fps": 24,
+          "duration": 9.125,
+          "keyframes": [
+            0,
+            2,
+            4,
+            6,
+            8
+          ],
+          "maxKeyframeGapSeconds": 2,
+          "upscaled": false
+        },
+        "1080": {
+          "url": "/fixtures/test-media/benchmark/deck-4-1080.mp4",
+          "sha256": "0d8c31af3b2d443e518d635d626bfda3d103e7c56f2550d38683cfc77982b742",
+          "codec": "h264",
+          "width": 1920,
+          "height": 1080,
+          "fps": 24,
+          "duration": 9.125,
+          "keyframes": [
+            0,
+            2,
+            4,
+            6,
+            8
+          ],
+          "maxKeyframeGapSeconds": 2,
+          "upscaled": true
+        }
+      }
+    },
+    {
+      "id": 5,
+      "sourceFile": "hf_20260715_194141_0245c9a1-d272-4a13-a828-2a1600612252.mp4",
+      "sourceSha256": "2d29a63deefe4d646b2f6873ff8e864daf10879b7350012f7118c1550c3adaf9",
+      "original": {
+        "codec": "h264",
+        "width": 1280,
+        "height": 720,
+        "fps": 24,
+        "duration": 14.416667,
+        "keyframes": [
+          0,
+          4.916667,
+          6.75,
+          8.916667,
+          10.666667
+        ],
+        "maxKeyframeGapSeconds": 4.916667
+      },
+      "variants": {
+        "720": {
+          "url": "/fixtures/test-media/benchmark/deck-5-720.mp4",
+          "sha256": "0672b8e6311ceaa091aa7589317944b35c01e37b98902387ec26aef3e982e69e",
+          "codec": "h264",
+          "width": 1280,
+          "height": 720,
+          "fps": 24,
+          "duration": 12,
+          "keyframes": [
+            0,
+            2,
+            4,
+            6,
+            8,
+            10
+          ],
+          "maxKeyframeGapSeconds": 2,
+          "upscaled": false
+        },
+        "1080": {
+          "url": "/fixtures/test-media/benchmark/deck-5-1080.mp4",
+          "sha256": "ab760628f6b9fe1f39e025a4686b2f053d618adf275cb0988360df84fea20802",
+          "codec": "h264",
+          "width": 1920,
+          "height": 1080,
+          "fps": 24,
+          "duration": 12,
+          "keyframes": [
+            0,
+            2,
+            4,
+            6,
+            8,
+            10
+          ],
+          "maxKeyframeGapSeconds": 2,
+          "upscaled": true
+        }
+      }
+    },
+    {
+      "id": 6,
+      "sourceFile": "hf_20260715_201526_024d1160-e1cf-478a-8c02-5eb43d077bb7.mp4",
+      "sourceSha256": "2614238fe1ebe28549475b002cee2b18a7a124bd9e9e1f39d20080ad2e84c90e",
+      "original": {
+        "codec": "h264",
+        "width": 1280,
+        "height": 720,
+        "fps": 24,
+        "duration": 13.291667,
+        "keyframes": [
+          0,
+          2.708333,
+          7.333333
+        ],
+        "maxKeyframeGapSeconds": 4.625
+      },
+      "variants": {
+        "720": {
+          "url": "/fixtures/test-media/benchmark/deck-6-720.mp4",
+          "sha256": "b8b72d2bdee1dd1b319bbee7bb1cd9631073eae8c4e978248fb67da329f4e84b",
+          "codec": "h264",
+          "width": 1280,
+          "height": 720,
+          "fps": 24,
+          "duration": 12,
+          "keyframes": [
+            0,
+            2,
+            4,
+            6,
+            8,
+            10
+          ],
+          "maxKeyframeGapSeconds": 2,
+          "upscaled": false
+        },
+        "1080": {
+          "url": "/fixtures/test-media/benchmark/deck-6-1080.mp4",
+          "sha256": "4a39b4040d79a28950533c5c4577db7b4b6c6185a730472c96b8cf14e628877e",
+          "codec": "h264",
+          "width": 1920,
+          "height": 1080,
+          "fps": 24,
+          "duration": 12,
+          "keyframes": [
+            0,
+            2,
+            4,
+            6,
+            8,
+            10
+          ],
+          "maxKeyframeGapSeconds": 2,
+          "upscaled": true
+        }
+      }
+    },
+    {
+      "id": 7,
+      "sourceFile": "hf_20260716_141721_f2b046a6-02fb-43c7-af95-2509f73de473.mp4",
+      "sourceSha256": "f83715342199c0dce40b482d87b8efae9ae945c79d6c57b18b7a1ac85925c824",
+      "original": {
+        "codec": "h264",
+        "width": 1280,
+        "height": 720,
+        "fps": 24,
+        "duration": 15.041667,
+        "keyframes": [
+          0,
+          1.5,
+          7.041667
+        ],
+        "maxKeyframeGapSeconds": 5.541667
+      },
+      "variants": {
+        "720": {
+          "url": "/fixtures/test-media/benchmark/deck-7-720.mp4",
+          "sha256": "990f6db6743f72fc8402518a38f89c472ca6825290e466b78f93b7c2ef3dfb32",
+          "codec": "h264",
+          "width": 1280,
+          "height": 720,
+          "fps": 24,
+          "duration": 12,
+          "keyframes": [
+            0,
+            2,
+            4,
+            6,
+            8,
+            10
+          ],
+          "maxKeyframeGapSeconds": 2,
+          "upscaled": false
+        },
+        "1080": {
+          "url": "/fixtures/test-media/benchmark/deck-7-1080.mp4",
+          "sha256": "e792f79c844a21b0bf636abe79cf476730eb0c18bdd4a5e240500010549662c7",
+          "codec": "h264",
+          "width": 1920,
+          "height": 1080,
+          "fps": 24,
+          "duration": 12,
+          "keyframes": [
+            0,
+            2,
+            4,
+            6,
+            8,
+            10
+          ],
+          "maxKeyframeGapSeconds": 2,
+          "upscaled": true
+        }
+      }
+    },
+    {
+      "id": 8,
+      "sourceFile": "hf_20260716_195331_41a2ba3d-fd44-42ca-af6e-8639bc4ebc0d.mp4",
+      "sourceSha256": "a01a5666182490f3268e766bae11b8aded406c15fb96c59ed040acd9836c76bc",
+      "original": {
+        "codec": "h264",
+        "width": 1280,
+        "height": 720,
+        "fps": 24,
+        "duration": 15.041667,
+        "keyframes": [
+          0,
+          8.25
+        ],
+        "maxKeyframeGapSeconds": 8.25
+      },
+      "variants": {
+        "720": {
+          "url": "/fixtures/test-media/benchmark/deck-8-720.mp4",
+          "sha256": "18fb7c0c00e75cc4c13bbdd673bb3609f0268d5e851f8b65478a80750804f671",
+          "codec": "h264",
+          "width": 1280,
+          "height": 720,
+          "fps": 24,
+          "duration": 12,
+          "keyframes": [
+            0,
+            2,
+            4,
+            6,
+            8,
+            10
+          ],
+          "maxKeyframeGapSeconds": 2,
+          "upscaled": false
+        },
+        "1080": {
+          "url": "/fixtures/test-media/benchmark/deck-8-1080.mp4",
+          "sha256": "9b75ad11d3f3a5ce0324a0d99794200bd2ede394452417f0afea7658f4df6a91",
+          "codec": "h264",
+          "width": 1920,
+          "height": 1080,
+          "fps": 24,
+          "duration": 12,
+          "keyframes": [
+            0,
+            2,
+            4,
+            6,
+            8,
+            10
+          ],
+          "maxKeyframeGapSeconds": 2,
+          "upscaled": true
+        }
+      }
+    }
+  ],
+  "audio": {
+    "url": "/fixtures/test-media/audio/track-excerpt.mp3",
+    "sha256": "a3357c3e125efae1f0deee63f0702ff83901e9b3767b4c9606f025f04823e983",
+    "duration": 180
+  },
+  "grid": {
+    "url": "/fixtures/test-media/analysis/track.beats.json",
+    "sha256": "a2711fef763868f853617f8ec597f7c2a2e682c4e4c6c5f4b94ca6e593a5cd31",
+    "provenance": "analyze-track.mjs prioritizes track-excerpt.mp3; durations verified; original analysis has no input hash"
+  },
+  "preparation": "12-second clips, original cadence, H264 CRF18 GOP48, IDs burned in; 1080 variants may be upscaled and are labeled"
+}

@@ -1,0 +1,10 @@
+import {readdirSync,readFileSync,writeFileSync,mkdirSync} from 'node:fs';
+const dir='benchmark-results';mkdirSync(dir,{recursive:true});
+const all=readdirSync(dir).filter(f=>f.endsWith('.json')).map(f=>({file:f,...JSON.parse(readFileSync(`${dir}/${f}`,'utf8'))}));
+const runs=all.filter(r=>r.kind==='musical-run'&&r.schemaVersion>=2);
+const lines=['# Musical playback results','','Generated from local raw runs. Browser/GPU submission estimates, not physical scanout. A one-minute preview is not a completed comparison suite. GPU-bank results use a larger explicit memory budget; compare that tradeoff separately.','','| Backend | Decks | Resolution | Seconds | Seed | On-time cuts | Worst deck p95 | Longest excess source error | Valid |','|---|---:|---:|---:|---:|---:|---:|---:|---|'];
+for(const r of runs){const cuts=r.decks.reduce((n,d)=>n+d.cuts,0),on=r.decks.reduce((n,d)=>n+d.onTimeCuts,0);lines.push(`| ${r.backend} | ${r.count} | ${r.resolution} | ${r.elapsed.toFixed(1)} | ${r.seed} | ${(100*on/Math.max(1,cuts)).toFixed(1)}% | ${Math.max(...r.decks.map(d=>d.p95Ms??Infinity)).toFixed(1)} ms | ${Math.max(...r.decks.map(d=>d.longestExcessSourceErrorSeconds??0)).toFixed(2)} s | ${r.completed&&!r.invalid.length?'yes':r.invalid.join(', ')||'incomplete'} |`);}
+const passing=runs.filter(r=>r.completed&&!r.invalid.length&&r.elapsed>=120&&r.decks.every(d=>d.onTimePercent>=99&&d.longestExcessSourceErrorSeconds<=.1));
+lines.push('','## Decision','',passing.length?'Some runs meet the acceptance gate. Require three repeated matching trials and soak results before recommending migration.':'No measured run meets the acceptance gate. Do not migrate Beatmaxxer on these results.','',`Completed version-2 runs: ${runs.filter(r=>r.completed).length}. Passing runs: ${passing.length}.`,'','## Raw evidence','',...runs.map(r=>`- [${r.file}](../benchmark-results/${r.file})`),'','## libmedia capability gate','',...all.filter(r=>r.kind==='capability-gate').map(r=>`- ${r.reason} (${r.file})`),'');
+writeFileSync('docs/musical-playback-results.md',lines.join('\n'));
+console.log(lines.join('\n'));

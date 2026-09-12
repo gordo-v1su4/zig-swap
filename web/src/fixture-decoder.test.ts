@@ -8,6 +8,25 @@ let returned = 0;
 let disposed = 0;
 let nextSample: (() => Promise<IteratorResult<FakeSample>>) | null;
 const samples: FakeSample[] = [];
+const retainedFrames: { closed: boolean }[] = [];
+
+function fakeFrame(timestamp: number, onClose = () => {}) {
+  return {
+    timestamp,
+    codedWidth: 1920,
+    codedHeight: 1080,
+    displayWidth: 1920,
+    displayHeight: 1080,
+    close: onClose,
+    clone: () => {
+      const retained = { closed: false };
+      retainedFrames.push(retained);
+      return fakeFrame(timestamp, () => {
+        retained.closed = true;
+      });
+    },
+  };
+}
 
 class FakeSample {
   duration = 1 / 30;
@@ -20,12 +39,9 @@ class FakeSample {
     this.closed = true;
   }
   toVideoFrame() {
-    return {
-      timestamp: this.timestamp * 1e6,
-      close: () => {
-        this.frameClosed = true;
-      },
-    };
+    return fakeFrame(this.timestamp * 1e6, () => {
+      this.frameClosed = true;
+    });
   }
 }
 
@@ -66,6 +82,8 @@ mock.module("mediabunny", () => ({
 const { FixtureDecoder } = await import("./fixture-decoder");
 const { RemappedFrameSource } = await import("./remapped-frame-source");
 const originalDecoder = globalThis.VideoDecoder;
+const originalFrame = globalThis.VideoFrame;
+const originalCanvas = globalThis.OffscreenCanvas;
 const originalRaf = globalThis.requestAnimationFrame;
 const originalCancel = globalThis.cancelAnimationFrame;
 let now = 0;
@@ -93,6 +111,7 @@ beforeEach(() => {
   pulls = streams = returned = disposed = now = nextRafId = 0;
   nextSample = null;
   samples.length = 0;
+  retainedFrames.length = 0;
   presented = [];
   errors = [];
   rafs.clear();
@@ -102,6 +121,30 @@ beforeEach(() => {
     getDisplayHeight: async () => 1080,
   });
   globalThis.VideoDecoder = class {} as unknown as typeof VideoDecoder;
+  globalThis.VideoFrame = class {
+    constructor(_image: unknown, options: { timestamp: number }) {
+      return fakeFrame(options.timestamp);
+    }
+  } as unknown as typeof VideoFrame;
+  globalThis.OffscreenCanvas = class {
+    constructor(
+      public width: number,
+      public height: number,
+    ) {}
+    getContext() {
+      return { drawImage() {} };
+    }
+    transferToImageBitmap() {
+      const image = {
+        closed: false,
+        close() {
+          this.closed = true;
+        },
+      };
+      retainedFrames.push(image);
+      return image;
+    }
+  } as unknown as typeof OffscreenCanvas;
   globalThis.requestAnimationFrame = (callback) => {
     rafs.set(++nextRafId, callback);
     return nextRafId;
@@ -126,6 +169,8 @@ afterEach(async () => {
   await settle();
   clock.mockRestore();
   globalThis.VideoDecoder = originalDecoder;
+  globalThis.VideoFrame = originalFrame;
+  globalThis.OffscreenCanvas = originalCanvas;
   globalThis.requestAnimationFrame = originalRaf;
   globalThis.cancelAnimationFrame = originalCancel;
 });
@@ -284,4 +329,98 @@ test("remapped output closes frames arriving after disposal", async () => {
   expect(late.closed).toBe(true);
   expect(presented).toEqual([]);
   expect(errors).toEqual([]);
+});
+
+test("repeated chops reuse bounded frames and disposal releases the cache", async () => {
+  const source = new RemappedFrameSource(
+    "/fixture.mp4",
+    (frame) => presented.push(frame.timestamp),
+    (error) => errors.push(error),
+    { cacheFrames: 2, cacheBytes: 32 * 1024 * 1024 },
+  );
+  await source.init();
+  for (const time of [0, 1 / 30, 0, 1 / 30]) {
+    source.presentAt(time);
+    await settle();
+  }
+  expect(presented).toEqual([0, 1e6 / 30, 0, 33333]);
+  expect(streams).toBe(1);
+  expect(pulls).toBe(2);
+  source.presentAt(2 / 30);
+  await settle();
+  expect(retainedFrames.filter((frame) => !frame.closed)).toHaveLength(2);
+  source.stop();
+  expect(retainedFrames.every((frame) => frame.closed)).toBe(true);
+  expect(errors).toEqual([]);
+});
+
+test("cache obeys the byte budget and can be disabled", async () => {
+  for (const cacheBytes of [1920 * 1080 * 4, 0]) {
+    const source = new RemappedFrameSource(
+      "/fixture.mp4",
+      () => {},
+      (error) => errors.push(error),
+      { cacheBytes },
+    );
+    await source.init();
+    for (const time of [0, 1, 2]) {
+      source.presentAt(time);
+      await settle();
+      expect(source.getStats().estimatedCacheBytes).toBeLessThanOrEqual(
+        cacheBytes,
+      );
+      expect(source.getStats().cachedFrames).toBe(cacheBytes ? 1 : 0);
+    }
+    source.stop();
+  }
+  expect(retainedFrames.every((frame) => frame.closed)).toBe(true);
+});
+
+test("a cached scrub supersedes a pending decode without a stale presentation", async () => {
+  const source = new RemappedFrameSource(
+    "/fixture.mp4",
+    (frame) => presented.push(frame.timestamp),
+    (error) => errors.push(error),
+  );
+  await source.init();
+  for (const time of [0, 1]) {
+    source.presentAt(time);
+    await settle();
+  }
+  let deliver!: (result: IteratorResult<FakeSample>) => void;
+  nextSample = () =>
+    new Promise((resolve) => {
+      deliver = resolve;
+    });
+  source.presentAt(60);
+  await settle();
+  source.presentAt(0);
+  expect(presented).toEqual([0, 1e6, 0]);
+  const late = new FakeSample(60);
+  deliver({ done: false, value: late });
+  await settle();
+  expect(presented).toEqual([0, 1e6, 0]);
+  expect(late.closed).toBe(true);
+  source.stop();
+  expect(retainedFrames.every((frame) => frame.closed)).toBe(true);
+});
+
+test("returning to a clip presents its held frame again on a shared output", async () => {
+  for (const cacheFrames of [0, 2]) {
+    const source = new RemappedFrameSource(
+      "/fixture.mp4",
+      (frame) => presented.push(frame.timestamp),
+      (error) => errors.push(error),
+      { cacheFrames },
+    );
+    presented = [];
+    await source.init();
+    source.presentAt(0.1);
+    await settle();
+    // Another clip has since drawn into the canvas; the former frame must redraw.
+    source.presentAt(0.1, true);
+    await settle();
+    expect(presented).toEqual([100000, 100000]);
+    source.stop();
+  }
 });
