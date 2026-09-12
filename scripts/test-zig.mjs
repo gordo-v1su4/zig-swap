@@ -12,4 +12,8 @@ const result = spawnSync('zig', ['build', 'test'], {
   shell: true,
 });
 
-process.exit(result.status ?? 1);
+const code = result.status ?? 1;
+if (code === 0) {
+  console.log('zig: all fixture tests passed (core/zig)');
+}
+process.exit(code);
