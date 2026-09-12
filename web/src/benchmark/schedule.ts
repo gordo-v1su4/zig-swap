@@ -106,7 +106,10 @@ export function targetAt(events: Cut[], time:number, duration:number) {
     const b=elapsed/event.smashBeatSeconds,cycles=Math.floor(b/16),phase=b%16;
     travel=(cycles*10+Math.min(phase,12)*.25+Math.min(Math.max(phase-12,0),1)*4+Math.max(phase-13,0))*event.smashBeatSeconds;
   }
-  return { event, source:((event.source+travel)%duration+duration)%duration };
+  let rate=event.speed??1;
+  if(event.rampPeriod)rate=1.25-.75*Math.cos(2*Math.PI*elapsed/event.rampPeriod);
+  if(event.smashBeatSeconds){const phase=(elapsed/event.smashBeatSeconds)%16;rate=phase<12?.25:phase<13?4:1;}
+  return { event, source:((event.source+travel)%duration+duration)%duration,rate };
 }
 
 export function buildMidiSchedule(grid:Grid,durations:number[],seed:number,seconds:number,selected:Pattern='midi-stems'):Cut[][] {

@@ -20,7 +20,7 @@ const isRemap=()=>select('mode').value==='remap';
 const usesRedline=()=>select('trigger').value!=='legacy'||select('pattern').value==='midi-stems';
 function modeControls(){
   const remap=isRemap();
-  el('speed-control').hidden=!remap;el('interpolation-control').hidden=!remap;
+  el('speed-readout').hidden=!remap;el('speed-control').hidden=!remap;el('interpolation-control').hidden=!remap;
   select('pattern').parentElement!.hidden=remap;select('groove').parentElement!.hidden=remap;
   el('mode-note').textContent=remap?'24 fps output · switch all decks · seeded ramps on selected triggers · music unchanged':'Trigger → cut or repeat burst · original playback checkpoint';
 }
@@ -199,6 +199,11 @@ function tick(now:number){
   let lo=0,hi=programTimes.length-1;
   while(lo<hi){const mid=Math.ceil((lo+hi)/2);if(programTimes[mid]<=time)lo=mid;else hi=mid-1;}
   const beatIndex=lo,view=select('view').value,pgm=view==='fixed'?0:view.startsWith('deck-')?Math.min(clips.length-1,Number(view.slice(5))-1):beatIndex%clips.length;
+  if(isRemap()){
+    const visible=targetAt(schedules[pgm],time,clips[pgm].duration);
+    el('speed-text').textContent=`PGM deck ${pgm+1} · ${visible.rate.toFixed(2)}× speed · ${visible.event.pattern==='speed-normal'?'NORMAL':'RAMP'} · 24 fps output`;
+    el('motion-marker').style.left=`calc(${(visible.source%2)/2*100}% - 4px)`;
+  }
   for(let i=0;i<adapters.length;i++){
     const target=targetAt(schedules[i],time,clips[i].duration);
     const future=schedules[i].filter(e=>e.at>time&&e.at<=time+.25&&!e.surprise);
@@ -222,7 +227,7 @@ function tick(now:number){
       const tolerance=1/clips[i].fps+(percentile(frameTimes.slice(-60),.5)??1/60);
       if(drift>tolerance){badDriftSince[i]??=time;longestBadDrift[i]=Math.max(longestBadDrift[i],time-badDriftSince[i]!);}else badDriftSince[i]=null;
     }
-    if(updateHud)el(`deck-${i}`).textContent=`${i===pgm?'PGM · ':''}Deck ${i+1} · ${target.event.pattern}\nTarget ${target.source.toFixed(3)} · shown ${held[i]?.pts.toFixed(3)??'—'}\nUnique ${(unique[i]/Math.max(.1,time)).toFixed(1)} / ${isRemap()?24:clips[i].fps} output fps · ${clips[i].fps} stored fps`;
+    if(updateHud)el(`deck-${i}`).textContent=`${i===pgm?'PGM · ':''}Deck ${i+1} · ${target.event.pattern} · ${target.rate.toFixed(2)}×\nTarget ${target.source.toFixed(3)} · shown ${held[i]?.pts.toFixed(3)??'—'}\nUnique ${(unique[i]/Math.max(.1,time)).toFixed(1)} / ${isRemap()?24:clips[i].fps} output fps · ${clips[i].fps} stored fps`;
   }
   presenter!.draw(pgm);
   if(beatIndex>lastProgramBeat){
