@@ -1,0 +1,74 @@
+{
+  "oracle": "webgpu-research/lab/browser/deck-pgm/src/timesampler/",
+  "module": "reducer.ts",
+  "version": 1,
+  "cases": [
+    {
+      "name": "transport-rewind-resets-slice",
+      "input": {
+        "previousState": {
+          "activeSlice": 0,
+          "pongDirection": 1,
+          "loopIteration": 1,
+          "jumpGeneration": 0,
+          "nextBoundaryBeat": 5,
+          "sliceStartedBeat": 4,
+          "sourceAnchorTransportSeconds": 12,
+          "sourceAnchorOffsetSeconds": 0,
+          "mode": "FWD",
+          "loopCount": 1,
+          "pendingTrigger": null
+        },
+        "transport": {
+          "transportSeconds": 8,
+          "audioOutputTimeSeconds": 0,
+          "performanceTimeSeconds": 0,
+          "playing": true,
+          "discontinuityGeneration": 1,
+          "beatPosition": 1,
+          "beatPhase": 0,
+          "beatIntervalSeconds": 0.5,
+          "presentationTimeSeconds": 0
+        },
+        "triggers": [],
+        "params": {
+          "sourceDurationSeconds": 8,
+          "sliceCount": 4,
+          "mode": "FWD",
+          "jumpSizeBeats": 1,
+          "loopCount": 1,
+          "playbackRate": 1,
+          "accentMode": "OFF",
+          "randomSeed": 305419896,
+          "feel": 0
+        }
+      },
+      "expected": {
+        "output": {
+          "activeSlice": 0,
+          "effectiveSliceCount": 4,
+          "sourceTimestampSeconds": 0,
+          "targetPlaybackRate": 1,
+          "jumpGeneration": 1,
+          "jumpReason": "discontinuity",
+          "mode": "FWD",
+          "loopIteration": 1,
+          "loopCount": 1
+        },
+        "nextState": {
+          "activeSlice": 0,
+          "pongDirection": 1,
+          "loopIteration": 1,
+          "jumpGeneration": 1,
+          "nextBoundaryBeat": 2,
+          "sliceStartedBeat": 1,
+          "sourceAnchorTransportSeconds": 8,
+          "sourceAnchorOffsetSeconds": 0,
+          "mode": "FWD",
+          "loopCount": 1,
+          "pendingTrigger": null
+        }
+      }
+    }
+  ]
+}

@@ -1,2 +1,9 @@
 # graft's local graph cache — regenerable, not committed (run `graft build`).
 /graft/
+
+# Prep-generated excerpts (regenerate via prep/scripts/analyze-track.ps1)
+prep/fixtures/test-media/audio/track-excerpt.mp3
+
+# Local scratch
+.scratch/
+prep/.env
