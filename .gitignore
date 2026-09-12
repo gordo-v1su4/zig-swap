@@ -7,3 +7,10 @@ prep/fixtures/test-media/audio/track-excerpt.mp3
 # Local scratch
 .scratch/
 prep/.env
+
+# Rust spike build artifacts
+core/rust/target/
+
+# Zig spike build artifacts
+core/zig/.zig-cache/
+core/zig/zig-out/
