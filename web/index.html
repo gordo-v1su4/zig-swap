@@ -2,55 +2,338 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Zig Swap — v0 PGM shell</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Zig Swap — Time Shaper</title>
     <style>
       :root {
         color-scheme: dark;
-        font-family: system-ui, sans-serif;
-        background: #050608;
-        color: #e2e8f0;
+        font-family: Inter, system-ui, sans-serif;
+        background: #09090b;
+        color: #fafafa;
+      }
+      * {
+        box-sizing: border-box;
       }
       body {
         margin: 0;
-        min-height: 100vh;
-        display: grid;
-        place-items: center;
-        padding: 1.5rem;
+        padding: 28px;
       }
       main {
-        width: min(960px, 100%);
+        width: min(1120px, 100%);
+        margin: auto;
         display: grid;
-        gap: 1rem;
+        gap: 20px;
+      }
+      header,
+      .row,
+      .transport {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+      }
+      h1 {
+        font-size: 23px;
+        letter-spacing: -0.7px;
+        margin: 4px 0;
+      }
+      .eyebrow,
+      label,
+      dt {
+        color: #a1a1aa;
+        font-size: 11px;
+        letter-spacing: 1.4px;
+        text-transform: uppercase;
+      }
+      .subtitle,
+      #status,
+      .hint {
+        color: #a1a1aa;
+        font-size: 13px;
+        margin: 5px 0;
+      }
+      .badge {
+        border: 1px solid #3f3f46;
+        border-radius: 20px;
+        padding: 7px 12px;
+        font-size: 12px;
+      }
+      .workspace {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 230px;
+        gap: 20px;
+      }
+      .panel {
+        background: #18181b;
+        border: 1px solid #27272a;
+        border-radius: 12px;
+        padding: 18px;
+      }
+      .output {
+        background: #000;
+        position: relative;
+        border-radius: 9px;
+        overflow: hidden;
+        aspect-ratio: 16/9;
       }
       canvas {
         width: 100%;
-        aspect-ratio: 16 / 9;
-        border: 1px solid #1e293b;
-        border-radius: 8px;
-        background: #0b0d12;
+        height: 100%;
+        display: block;
       }
-      pre {
-        margin: 0;
-        padding: 1rem;
-        background: #0f172a;
-        border-radius: 8px;
-        overflow: auto;
+      #placeholder {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-content: center;
+        text-align: center;
+        color: #71717a;
+        pointer-events: none;
+      }
+      #placeholder[hidden] {
+        display: none;
+      }
+      button {
+        background: #27272a;
+        color: #fafafa;
+        border: 1px solid #3f3f46;
+        border-radius: 7px;
+        padding: 10px 16px;
+        font: inherit;
+        font-size: 13px;
+        cursor: pointer;
+      }
+      button:hover {
+        background: #3f3f46;
+      }
+      button:disabled {
+        opacity: 0.4;
+        cursor: default;
+      }
+      button.primary {
+        background: #fafafa;
+        color: #18181b;
+        border-color: #fafafa;
+        min-width: 90px;
+      }
+      button:focus-visible,
+      input:focus-visible {
+        outline: 2px solid #d4d4d8;
+        outline-offset: 4px;
+      }
+      .transport {
+        justify-content: flex-start;
+        margin-top: 16px;
+        flex-wrap: wrap;
+      }
+      .time {
+        font-variant-numeric: tabular-nums;
+        font-family: ui-monospace, monospace;
+        font-size: 14px;
+      }
+      .scrub {
+        margin-top: 22px;
+        display: grid;
+        gap: 12px;
+      }
+      input[type="range"] {
+        width: 100%;
+        accent-color: #e4e4e7;
+        cursor: pointer;
+      }
+      dl {
+        margin: 20px 0;
+        display: grid;
+        gap: 20px;
+      }
+      dd {
+        margin: 7px 0 0;
+        font-variant-numeric: tabular-nums;
+        font-size: 20px;
+      }
+      .slices {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 6px;
+        margin-top: 12px;
+      }
+      .slice {
+        border: 1px solid #3f3f46;
+        border-radius: 5px;
+        padding: 12px 0;
+        text-align: center;
+        font-size: 13px;
+        color: #71717a;
+      }
+      .slice.active {
+        color: #18181b;
+        background: #e4e4e7;
+        border-color: #e4e4e7;
+      }
+      details {
+        color: #71717a;
         font-size: 12px;
       }
-      #status {
+      summary {
+        cursor: pointer;
+      }
+      pre {
+        white-space: pre-wrap;
+      }
+      @media (max-width: 760px) {
+        body {
+          padding: 16px;
+        }
+        .workspace {
+          grid-template-columns: 1fr;
+        }
+        dl {
+          grid-template-columns: repeat(3, 1fr);
+        }
+        header {
+          align-items: start;
+        }
+      }
+      input[type="range"] {
+        appearance: none;
+        -webkit-appearance: none;
+        background: transparent;
+        height: 30px;
         margin: 0;
-        color: #94a3b8;
-        font-size: 14px;
+        cursor: ew-resize;
+      }
+      input[type="range"]::-webkit-slider-runnable-track {
+        height: 6px;
+        border: 1px solid #242424;
+        border-radius: 2px;
+        background: linear-gradient(
+          to right,
+          #e05c00 var(--slider-pct, 0%),
+          #171717 var(--slider-pct, 0%)
+        );
+      }
+      input[type="range"]::-webkit-slider-thumb {
+        appearance: none;
+        -webkit-appearance: none;
+        width: 8px;
+        height: 20px;
+        margin-top: -8px;
+        border: 1px solid #333840;
+        border-radius: 1px;
+        background: linear-gradient(180deg, #2a2e34, #181a1e);
+        box-shadow: 0 1px 2px #0007;
+      }
+      input[type="range"]::-moz-range-track {
+        height: 6px;
+        border: 1px solid #242424;
+        border-radius: 2px;
+        background: linear-gradient(
+          to right,
+          #e05c00 var(--slider-pct, 0%),
+          #171717 var(--slider-pct, 0%)
+        );
+      }
+      input[type="range"]::-moz-range-thumb {
+        width: 8px;
+        height: 20px;
+        border: 1px solid #333840;
+        border-radius: 1px;
+        background: linear-gradient(180deg, #2a2e34, #181a1e);
+        box-shadow: 0 1px 2px #0007;
+      }
+      input[type="range"]:hover::-webkit-slider-thumb,
+      input[type="range"]:focus-visible::-webkit-slider-thumb {
+        border-color: #e05c00;
+        background: #3a3a3a;
+      }
+      input[type="range"]:hover::-moz-range-thumb,
+      input[type="range"]:focus-visible::-moz-range-thumb {
+        border-color: #e05c00;
+        background: #3a3a3a;
       }
     </style>
   </head>
   <body>
     <main>
-      <h1>Zig Swap v0</h1>
-      <p id="status">Loading…</p>
-      <canvas id="pgm" width="1280" height="720"></canvas>
-      <pre id="frame">{}</pre>
+      <header>
+        <div>
+          <span class="eyebrow">Zig Swap / v0</span>
+          <h1>Time Shaper</h1>
+          <p class="subtitle">Locked-grid chops. One clock. Manual control.</p>
+        </div>
+        <span class="badge" id="mode">Paused · Auto</span>
+      </header>
+      <div class="workspace">
+        <section class="panel" aria-label="Program output">
+          <div class="output">
+            <canvas
+              id="pgm"
+              width="1280"
+              height="720"
+              aria-label="Program video"
+            ></canvas>
+            <div id="placeholder">Loading fixture…</div>
+          </div>
+          <div class="transport">
+            <button id="play" class="primary" disabled>Play</button
+            ><button id="reset" disabled>Reset</button
+            ><span id="clock" class="time" aria-label="Locked clock"
+              >00:00.000</span
+            ><span class="hint">locked clock</span>
+          </div>
+          <div class="scrub">
+            <div class="row">
+              <label for="scrub">Source position</label
+              ><span id="source-time" class="time">00:00.000</span>
+            </div>
+            <input
+              id="scrub"
+              type="range"
+              min="0"
+              max="180"
+              step="0.01"
+              value="0"
+              disabled
+              aria-label="Scrub source video"
+            />
+            <div class="row">
+              <span class="hint"
+                >Scrub to take manual control. The clock keeps its place.</span
+              ><button id="auto" disabled>Return to Auto</button>
+            </div>
+          </div>
+        </section>
+        <aside class="panel" aria-label="Time Shaper status">
+          <span class="eyebrow">Locked beat grid</span>
+          <dl>
+            <div>
+              <dt>Tempo</dt>
+              <dd id="bpm">—</dd>
+            </div>
+            <div>
+              <dt>Beat</dt>
+              <dd id="beat">1</dd>
+            </div>
+            <div>
+              <dt>Repeat</dt>
+              <dd id="repeat">1 / 2</dd>
+            </div>
+          </dl>
+          <label>Active slice</label>
+          <div class="slices" aria-label="Active slice">
+            <span class="slice active">1</span><span class="slice">2</span
+            ><span class="slice">3</span><span class="slice">4</span>
+          </div>
+          <p class="hint" style="margin-top: 20px">
+            Auto repeats each beat twice, then moves to the next source slice.
+          </p>
+        </aside>
+      </div>
+      <p id="status" role="status">Initializing…</p>
+      <details>
+        <summary>Diagnostics</summary>
+        <pre id="frame">{}</pre>
+      </details>
     </main>
     <script type="module" src="./src/main.ts"></script>
   </body>

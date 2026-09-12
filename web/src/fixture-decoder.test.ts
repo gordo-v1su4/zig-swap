@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, expect, mock, spyOn, test } from 'bun:test';
+import { afterEach, beforeEach, expect, mock, spyOn, test } from "bun:test";
 
 let trackPromise: Promise<unknown>;
 let duration = 180;
@@ -13,24 +13,37 @@ class FakeSample {
   duration = 1 / 30;
   closed = false;
   frameClosed = false;
-  constructor(readonly timestamp: number) { samples.push(this); }
-  close() { this.closed = true; }
+  constructor(readonly timestamp: number) {
+    samples.push(this);
+  }
+  close() {
+    this.closed = true;
+  }
   toVideoFrame() {
-    return { timestamp: this.timestamp * 1e6, close: () => { this.frameClosed = true; } };
+    return {
+      timestamp: this.timestamp * 1e6,
+      close: () => {
+        this.frameClosed = true;
+      },
+    };
   }
 }
 
-mock.module('mediabunny', () => ({
+mock.module("mediabunny", () => ({
   MP4: {},
   UrlSource: class {},
   Input: class {
-    getPrimaryVideoTrack() { return trackPromise; }
-    dispose() { disposed++; }
+    getPrimaryVideoTrack() {
+      return trackPromise;
+    }
+    dispose() {
+      disposed++;
+    }
   },
   VideoSampleSink: class {
-    samples() {
+    samples(start = 0) {
       streams++;
-      let index = 0;
+      let index = Math.floor(start * 30);
       return {
         async next() {
           pulls++;
@@ -38,14 +51,20 @@ mock.module('mediabunny', () => ({
           if (index / 30 >= duration) return { done: true, value: undefined };
           return { done: false, value: new FakeSample(index++ / 30) };
         },
-        async return() { returned++; return { done: true, value: undefined }; },
-        [Symbol.asyncIterator]() { return this; },
+        async return() {
+          returned++;
+          return { done: true, value: undefined };
+        },
+        [Symbol.asyncIterator]() {
+          return this;
+        },
       };
     }
   },
 }));
 
-const { FixtureDecoder } = await import('./fixture-decoder');
+const { FixtureDecoder } = await import("./fixture-decoder");
+const { RemappedFrameSource } = await import("./remapped-frame-source");
 const originalDecoder = globalThis.VideoDecoder;
 const originalRaf = globalThis.requestAnimationFrame;
 const originalCancel = globalThis.cancelAnimationFrame;
@@ -87,12 +106,18 @@ beforeEach(() => {
     rafs.set(++nextRafId, callback);
     return nextRafId;
   };
-  globalThis.cancelAnimationFrame = (id) => { rafs.delete(id); };
-  clock = spyOn(performance, 'now').mockImplementation(() => now);
+  globalThis.cancelAnimationFrame = (id) => {
+    rafs.delete(id);
+  };
+  clock = spyOn(performance, "now").mockImplementation(() => now);
   player = new FixtureDecoder({
-    clipUrl: '/fixture.mp4',
-    onFrame: (frame) => { presented.push(frame.timestamp); },
-    onError: (message) => { errors.push(message); },
+    clipUrl: "/fixture.mp4",
+    onFrame: (frame) => {
+      presented.push(frame.timestamp);
+    },
+    onError: (message) => {
+      errors.push(message);
+    },
   });
 });
 
@@ -105,7 +130,7 @@ afterEach(async () => {
   globalThis.cancelAnimationFrame = originalCancel;
 });
 
-test('starts a long clip immediately and pulls only the next presentation sample', async () => {
+test("starts a long clip immediately and pulls only the next presentation sample", async () => {
   player.start();
   await settle();
   expect(presented).toEqual([0]);
@@ -124,9 +149,12 @@ test('starts a long clip immediately and pulls only the next presentation sample
   expect(errors).toEqual([]);
 });
 
-test('closes a sample arriving after stop without presenting or converting it', async () => {
+test("closes a sample arriving after stop without presenting or converting it", async () => {
   let deliver!: (result: IteratorResult<FakeSample>) => void;
-  nextSample = () => new Promise((resolve) => { deliver = resolve; });
+  nextSample = () =>
+    new Promise((resolve) => {
+      deliver = resolve;
+    });
   player.start();
   await settle();
   player.stop();
@@ -139,9 +167,11 @@ test('closes a sample arriving after stop without presenting or converting it', 
   expect(errors).toEqual([]);
 });
 
-test('stop during metadata loading prevents a decode stream from starting', async () => {
+test("stop during metadata loading prevents a decode stream from starting", async () => {
   let deliver!: (track: unknown) => void;
-  trackPromise = new Promise((resolve) => { deliver = resolve; });
+  trackPromise = new Promise((resolve) => {
+    deliver = resolve;
+  });
   player.start();
   player.stop();
   deliver({});
@@ -151,7 +181,7 @@ test('stop during metadata loading prevents a decode stream from starting', asyn
   expect(errors).toEqual([]);
 });
 
-test('reopens decoding at EOF after holding the last frame for its duration', async () => {
+test("reopens decoding at EOF after holding the last frame for its duration", async () => {
   duration = 1 / 30;
   player.start();
   await settle();
@@ -159,10 +189,12 @@ test('reopens decoding at EOF after holding the last frame for its duration', as
   await advance(34);
   expect(streams).toBe(2);
   expect(presented).toEqual([0, 0]);
-  expect(samples.every((sample) => sample.closed && sample.frameClosed)).toBe(true);
+  expect(samples.every((sample) => sample.closed && sample.frameClosed)).toBe(
+    true,
+  );
 });
 
-test('drops expired samples after a stall and continues playback', async () => {
+test("drops expired samples after a stall and continues playback", async () => {
   player.start();
   await settle();
   await advance(1010);
@@ -171,11 +203,85 @@ test('drops expired samples after a stall and continues playback', async () => {
   expect(samples.filter((sample) => !sample.closed)).toHaveLength(1);
 });
 
-test('decode errors release the input and iterator', async () => {
-  nextSample = async () => { throw new Error('decode failed'); };
+test("decode errors release the input and iterator", async () => {
+  nextSample = async () => {
+    throw new Error("decode failed");
+  };
   player.start();
   await settle();
-  expect(errors).toEqual(['decode failed']);
+  expect(errors).toEqual(["decode failed"]);
   expect(disposed).toBe(1);
   expect(returned).toBeGreaterThan(0);
+});
+
+test("remapped output seeks forward and backward without retaining presented frames", async () => {
+  const source = new RemappedFrameSource(
+    "/fixture.mp4",
+    (frame) => presented.push(frame.timestamp),
+    (error) => errors.push(error),
+  );
+  await source.init();
+  source.presentAt(60);
+  await settle();
+  source.presentAt(60.01);
+  await settle();
+  expect(presented).toEqual([60e6]);
+  source.presentAt(120);
+  await settle();
+  source.presentAt(10);
+  await settle();
+  expect(presented).toEqual([60e6, 120e6, 10e6]);
+  expect(samples.every((sample) => sample.closed && sample.frameClosed)).toBe(
+    true,
+  );
+  expect(streams).toBe(3);
+  source.stop();
+  expect(errors).toEqual([]);
+});
+
+test("a newer scrub request replaces an in-flight request for another source region", async () => {
+  let deliver!: (result: IteratorResult<FakeSample>) => void;
+  nextSample = () =>
+    new Promise((resolve) => {
+      deliver = resolve;
+    });
+  const source = new RemappedFrameSource(
+    "/fixture.mp4",
+    (frame) => presented.push(frame.timestamp),
+    (error) => errors.push(error),
+  );
+  await source.init();
+  source.presentAt(0);
+  await settle();
+  source.presentAt(60);
+  nextSample = null;
+  const stale = new FakeSample(0);
+  deliver({ done: false, value: stale });
+  await settle();
+  expect(stale.closed).toBe(true);
+  expect(presented).toEqual([60e6]);
+  source.stop();
+});
+
+test("remapped output closes frames arriving after disposal", async () => {
+  let deliver!: (result: IteratorResult<FakeSample>) => void;
+  nextSample = () =>
+    new Promise((resolve) => {
+      deliver = resolve;
+    });
+  const source = new RemappedFrameSource(
+    "/fixture.mp4",
+    (frame) => presented.push(frame.timestamp),
+    (error) => errors.push(error),
+  );
+  await source.init();
+  source.presentAt(0);
+  await settle();
+  source.stop();
+  const late = new FakeSample(0);
+  deliver({ done: false, value: late });
+  await settle();
+  expect(late.closed).toBe(true);
+  expect(presented).toEqual([]);
+  expect(errors).toEqual([]);
 });
