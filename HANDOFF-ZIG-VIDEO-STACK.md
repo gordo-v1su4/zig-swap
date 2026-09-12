@@ -144,9 +144,8 @@ Beatsmaxxer today: **SvelteKit + TS WebGPU + HTMLVideo**. Rust in Tauri = shell 
 | Tool | Use |
 |------|-----|
 | **Zig** 0.16+ | `core/` — `zig build`, wasm32-freestanding for browser worker |
-| **bun** | Web shell dev server, TS glue only |
-| **uv** | Python prep if needed |
-| **Node 24** | Only if graft/MCP tooling from research repo |
+| **bun** / **bunx** | Web shell dev server, TS glue, all JS package/script commands — **not npm/npx** |
+| **uv** | Python prep — **not pip** |
 
 ---
 

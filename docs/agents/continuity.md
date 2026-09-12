@@ -43,6 +43,20 @@ Handoff source doc: [`HANDOFF-ZIG-VIDEO-STACK.md`](../../HANDOFF-ZIG-VIDEO-STACK
 
 `prep/fixtures/test-media/` — bundled clip + audio. Prep writes `analysis/track.beats.json` using the same Studio API shape the lab used (`studio-audio-v1`).
 
+## Toolchain (mandatory)
+
+| Layer | Use | Never |
+|-------|-----|-------|
+| JS/TS packages & scripts | **bun** / **bunx** | npm, npx, pnpm, yarn |
+| Python prep | **uv** (`uv run`, `uv sync`, `uv add`) | bare `python`, `pip`, `pip install` |
+| Compiled core | **Zig** 0.16+ (`zig build`, wasm32-freestanding) | — |
+
+Examples: `bun install`, `bun run dev`, `bunx vitest`, `uv run python prep/analyze.py`. Graft CLI: `bun install -g @nanonets/graft` or `bunx @nanonets/graft`.
+
+## Issue tracker
+
+**Linear** — team **V1su4**, project **[Zig Swap](https://linear.app/v1su4/project/zig-swap-6dd41597bb31)**. Use Linear MCP in Cursor for `/to-spec`, `/to-tickets`, `/triage`, `/implement`. GitHub repo is for code and PRs only.
+
 ## Domain docs
 
 - Glossary: [`CONTEXT.md`](../../CONTEXT.md)

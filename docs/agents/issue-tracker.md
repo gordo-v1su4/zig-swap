@@ -1,45 +1,56 @@
-# Issue tracker: GitHub
+# Issue tracker: Linear
 
-Issues and specs for this repo live as GitHub issues. Use the `gh` CLI for all operations.
+Specs, tickets, and triage for **zig-swap** live in **Linear** (team **V1su4**), project **[Zig Swap](https://linear.app/v1su4/project/zig-swap-6dd41597bb31)**.
+
+GitHub (`gordo-v1su4/zig-swap`) is for **code and PRs only** — not the issue tracker.
+
+## Access
+
+- **Workspace:** [linear.app/v1su4](https://linear.app/v1su4)
+- **Team:** V1su4 (issue prefix `V1S-`)
+- **Project:** Zig Swap
+- **Agent tooling:** Linear MCP (`plugin-linear-linear`) — authenticated in Cursor
 
 ## Conventions
 
-- **Create an issue**: `gh issue create --title "..." --body "..."`. Use a heredoc for multi-line bodies.
-- **Read an issue**: `gh issue view <number> --comments`, filtering comments by `jq` and also fetching labels.
-- **List issues**: `gh issue list --state open --json number,title,body,labels,comments --jq '[.[] | {number, title, body, labels: [.labels[].name], comments: [.comments[].body]}]'` with appropriate `--label` and `--state` filters.
-- **Comment on an issue**: `gh issue comment <number> --body "..."`
-- **Apply / remove labels**: `gh issue edit <number> --add-label "..."` / `--remove-label "..."`
-- **Close**: `gh issue close <number> --comment "..."`
-
-Infer the repo from `git remote -v`; `gh` does this automatically when run inside a clone.
-
-## Pull requests as a triage surface
-
-**PRs as a request surface: no.** _(Set to `yes` if this repo treats external PRs as feature requests; `/triage` reads this flag.)_
-
-When set to `yes`, PRs run through the same labels and states as issues, using the `gh pr` equivalents:
-
-- **Read a PR**: `gh pr view <number> --comments` and `gh pr diff <number>` for the diff.
-- **List external PRs for triage**: `gh pr list --state open --json number,title,body,labels,author,authorAssociation,comments` then keep only `authorAssociation` of `CONTRIBUTOR`, `FIRST_TIME_CONTRIBUTOR`, or `NONE` (drop `OWNER`/`MEMBER`/`COLLABORATOR`).
-- **Comment / label / close**: `gh pr comment`, `gh pr edit --add-label`/`--remove-label`, `gh pr close`.
-
-GitHub shares one number space across issues and PRs, so a bare `#42` may be either: resolve with `gh pr view 42` and fall back to `gh issue view 42`.
+- **Create an issue:** `save_issue` with `team: "V1su4"`, `project: "Zig Swap"`, `title`, `description` (Markdown).
+- **Read an issue:** `get_issue` with id or identifier (e.g. `V1S-123`).
+- **List issues:** `list_issues` with `team: "V1su4"`, `project: "Zig Swap"`, optional `label: "ready-for-agent"`.
+- **Comment:** `save_comment` on the issue id.
+- **Apply labels:** `save_issue` with `addLabels: ["ready-for-agent"]` (or `labels` to replace full set).
+- **Close / state:** `save_issue` with `state: "Done"` or `state: "Canceled"`.
+- **Blocking edges:** `save_issue` with `blockedBy: ["V1S-10"]` (native Linear blocking).
+- **Link to GitHub:** `save_issue` `links: [{ url, title }]` for PRs, commits, or repo docs.
 
 ## When a skill says "publish to the issue tracker"
 
-Create a GitHub issue.
+Create a Linear issue in project **Zig Swap** via `save_issue`.
+
+For specs from `/to-spec`: apply label **`ready-for-agent`**.
+
+For tickets from `/to-tickets`: publish in dependency order (blockers first); set **`blockedBy`** on each issue; apply **`ready-for-agent`**.
 
 ## When a skill says "fetch the relevant ticket"
 
-Run `gh issue view <number> --comments`.
+`get_issue` on the Linear identifier (e.g. `V1S-42`) and `list_comments` if thread context is needed.
+
+## Triage labels
+
+See `docs/agents/triage-labels.md`. Labels exist on team V1su4:
+
+- `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`
 
 ## Wayfinding operations
 
-Used by `/wayfinder`. The **map** is a single issue with **child** issues as tickets.
+Used by `/wayfinder`. The **map** is a parent issue; **child tickets** are sub-issues.
 
-- **Map**: a single issue labelled `wayfinder:map`, holding the Notes / Decisions-so-far / Fog body. `gh issue create --label wayfinder:map`.
-- **Child ticket**: an issue linked to the map as a GitHub sub-issue (`gh api` on the sub-issues endpoint). Where sub-issues aren't enabled, add the child to a task list in the map body and put `Part of #<map>` at the top of the child body. Labels: `wayfinder:<type>` (`research`/`prototype`/`grilling`/`task`). Once claimed, the ticket is assigned to the driving dev.
-- **Blocking**: GitHub's **native issue dependencies**, the canonical, UI-visible representation. Add an edge with `gh api --method POST repos/<owner>/<repo>/issues/<child>/dependencies/blocked_by -F issue_id=<blocker-db-id>`, where `<blocker-db-id>` is the blocker's numeric **database id** (`gh api repos/<owner>/<repo>/issues/<n> --jq .id`, _not_ the `#number` or `node_id`). GitHub reports `issue_dependencies_summary.blocked_by` (open blockers only, the live gate). Where dependencies aren't available, fall back to a `Blocked by: #<n>, #<n>` line at the top of the child body. A ticket is unblocked when every blocker is closed.
-- **Frontier query**: list the map's open children (`gh issue list --state open`, scoped to the map's sub-issues / task list), drop any with an open blocker (`issue_dependencies_summary.blocked_by > 0`, or an open issue in the `Blocked by` line) or an assignee; first in map order wins.
-- **Claim**: `gh issue edit <n> --add-assignee @me`, the session's first write.
-- **Resolve**: `gh issue comment <n> --body "<answer>"`, then `gh issue close <n>`, then append a context pointer (gist + link) to the map's Decisions-so-far.
+- **Map:** one issue labelled `wayfinder:map` (create label if missing) with Notes / Decisions-so-far / Fog in the body.
+- **Child ticket:** `save_issue` with `parentId` set to the map issue; label `wayfinder:<type>` (`research` / `prototype` / `grilling` / `task`).
+- **Blocking:** `blockedBy` on child issues (preferred) or explicit "Blocked by: V1S-n" in description.
+- **Frontier:** `list_issues` open children of the map; drop any with open blockers or assignee.
+- **Claim:** `save_issue` with `assignee: "me"`.
+- **Resolve:** comment with answer, `state: "Done"`, append decision pointer to map description.
+
+## Pull requests
+
+PRs stay on GitHub. Link PRs to Linear issues via `links` or Linear's GitHub integration if enabled. External PRs are **not** a triage surface for zig-swap.

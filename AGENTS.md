@@ -44,7 +44,7 @@ no API key, $0).
 
 ### Issue tracker
 
-Issues live in GitHub Issues for `gordo-v1su4/zig-swap`. See `docs/agents/issue-tracker.md`.
+Specs and tickets live in **Linear** (team V1su4, project [Zig Swap](https://linear.app/v1su4/project/zig-swap-6dd41597bb31)). GitHub is code/PRs only. See `docs/agents/issue-tracker.md`.
 
 ### Triage labels
 
@@ -53,3 +53,7 @@ Five canonical labels (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-f
 ### Domain docs
 
 Single-context layout: root `CONTEXT.md` and `docs/adr/`. See `docs/agents/domain.md`.
+
+### Toolchain
+
+**bun** / **bunx** for JS/TS; **uv** for Python. Never npm, npx, pip. See `docs/agents/continuity.md`.
