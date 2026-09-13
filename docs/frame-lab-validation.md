@@ -12,5 +12,5 @@ Verified on the local Windows in-app browser at `http://localhost:65296/benchmar
 - Print uses `window.print()` and landscape table styling; this review did not send a physical print job.
 
 These are UI and standalone workflow checks, not a new controlled playback-engine study. Historical previews remain labeled as previews; no full comparison suite or new winning engine is claimed.
-- Additional browser check: two local clips at 720p and 1080p loaded together and presented distinct timestamps at approximately native cadence. This was a presentation check, not a scored completed trial. Standalone hot reload is disabled to avoid editing interrupting a benchmark.
+- Additional browser check: two local clips at 720p and 1080p loaded together and presented distinct timestamps at approximately native cadence. Saved report `1789336582904-99a53c26-cb9d-4890-92ae-a2b50ad4afbb.json` confirms the 30-second two-deck preview completed with no invalidation reasons. This is still a preview, not a formal comparative trial. Standalone hot reload is disabled to avoid editing interrupting a benchmark.
 - Numeric p95 sorting and CSV export controls were exercised in the final standalone build.
