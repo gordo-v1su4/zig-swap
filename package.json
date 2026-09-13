@@ -3,6 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "benchmark": "bun run web/dev-server.ts --benchmark",
     "dev": "bun run web/dev-server.ts",
     "build:wasm": "bun run scripts/build-wasm.mjs",
     "fixtures:generate": "bun run core/fixtures/generate-timesampler-fixtures.mjs",
