@@ -411,6 +411,12 @@ async function begin() {
           interpolated!.clips.find((c) => c.id === i + 1)?.variant ?? clip,
       );
     }
+    if(restoredRun){
+      const expected=restoredRun.clips?.map((c:any)=>c.sha256);
+      if(expected&&JSON.stringify(expected)!==JSON.stringify(clips.map(c=>c.sha256)))throw Error('This saved run requires its original videos in the original order. Select the matching files before replaying.');
+      const audioHash=localAudio?localAudioHash:usesRedline()?midiEvents.sourceSha256:manifest.audio.sha256;
+      if(restoredRun.audioHash&&restoredRun.audioHash!==audioHash)throw Error('Select the original audio for this saved run. Its fingerprint does not match the current soundtrack.');
+    }
     const audioDriven = select("pattern").value.startsWith("audio-"),
       dense = select("pattern").value === "audio-dense";
     const midiDriven = select("pattern").value === "midi-stems";
@@ -947,6 +953,7 @@ pause.onclick = () => {
   status.textContent = "Paused; Play resumes at the same musical position.";
 };
 el("reset").onclick = async () => {
+  restoredRun=null;
   suiteCancelled = true;
   runId++;
   finishRun?.();
@@ -1112,3 +1119,25 @@ if (!navigator.gpu) {
   el("capabilities").textContent =
     "WebGPU available · MP4 codec support depends on your browser";
 }
+
+let restoredRun: Record<string, any> | null = null;
+window.addEventListener('benchmark-reload', async event => {
+  const report=(event as CustomEvent).detail;
+  suiteCancelled=true;runId++;finishRun?.();finishRun=null;await cleanup();offset=0;busy=false;controls(false);
+  const set=(id:string,value:unknown,numeric=false)=>{
+    const control=select(id),text=String(value);
+    if(numeric&&Number.isFinite(Number(value))&&Number(value)>0&&!Array.from(control.options).some(o=>o.value===text))control.add(new Option(text,text));
+    if(Array.from(control.options).some(o=>o.value===text))control.value=text;
+  };
+  set('backend',report.backend);set('mode',report.mode??'cuts');set('count',report.count,true);set('duration',report.duration??report.elapsed,true);
+  set('resolution',report.resolution);set('trigger',report.signal??(report.pattern==='midi-stems'?'midi':'legacy'));set('pattern',report.pattern);
+  set('speed',report.action);set('view',report.programView??'switch');set('groove',report.groove??'straight');set('interpolation',report.interpolation??'original');
+  if(report.cacheBudgetBytes)set('budget',report.cacheBudgetBytes/2**20,true);
+  el<HTMLInputElement>('seed').value=String(report.seed??42);
+  const bpm=/local-energy-v1-bpm-(.+)/.exec(report.gridHash??'');if(bpm)el<HTMLInputElement>('local-bpm').value=bpm[1];
+  const custom=report.clips?.some((c:any)=>String(c.url).startsWith('local-video'));
+  if(!custom){localClips.forEach(c=>URL.revokeObjectURL(c.url));localClips=[];el<HTMLInputElement>('local-videos').value='';}
+  if(report.signal!=='local-energy'){localAudio=null;localAudioHash='';bufferUrl='';el<HTMLInputElement>('local-audio').value='';}
+  restoredRun=report;modeControls();mediaStatus();el<HTMLButtonElement>('tab-lab').click();play.disabled=false;pause.disabled=true;
+  status.textContent='Run settings restored. '+(custom||report.signal==='local-energy'?'Reselect matching local media if needed; hashes are checked before playback. ':'Included media is available. ')+ 'Press Play to rerun with the current engine; historical measurements are unchanged.';
+});

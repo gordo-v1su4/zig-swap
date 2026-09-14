@@ -47,3 +47,10 @@ For repeatable comparisons, keep media hashes, workload, seed, duration, deck co
 ## Scope
 
 This is an experimental playback lab, not a production migration or a universal engine ranking. The methodology view describes the timing model and limitations. Original research reports remain in `benchmark-results/`; implementation planning is in `docs/frame-lab-plan.md`. Verify the licenses and redistribution permissions for dependencies and media before republishing assets.
+
+
+### Reloading a run
+
+Use **Reload** beside a recorded run to restore its controls in Playback lab, then press Play. This reruns the setup with the current implementation; historical measurements remain unchanged. Included media is available immediately. Local files are never persisted: select the original videos in their original order and the original audio if needed. Playback checks their recorded fingerprints before proceeding. Reset clears the restored-media requirement for a new experiment. Custom audio is analyzed locally when selected.
+
+Subtle **BEST** marks identify the highest on-time rate and lowest cut p95, missed-cut count and preload time among completed, valid, versioned cut runs in the filtered view. They are descriptive extrema, not an overall engine winner: media, deck counts, workloads and memory budgets can differ. Legacy runs, failed probes and ramp runs are excluded from these cut highlights.

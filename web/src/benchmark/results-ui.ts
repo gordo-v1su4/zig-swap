@@ -70,6 +70,13 @@ function rows() {
 }
 function render() {
   const data = rows();
+  const eligible=data.filter(r=>r.raw.completed&&!r.raw.invalid?.length&&r.mode==='cuts'&&r.raw.schemaVersion);
+  const best=new Map<string,number>();
+  for(const key of ['onTime','p95','missed','preload']) {
+    const values=eligible.map(r=>(r as any)[key]).filter(v=>typeof v==='number'&&Number.isFinite(v));
+    if(values.length>1)best.set(key,key==='onTime'?Math.max(...values):Math.min(...values));
+  }
+
   $("result-count").textContent = String(runs.length + imported.length);
   const head = $("results-table").querySelector("thead")!,
     body = $("results-table").querySelector("tbody")!;
@@ -124,6 +131,11 @@ function render() {
     for (const [key] of columns) {
       const cell = document.createElement("td");
       cell.textContent = display(r, key);
+      if(eligible.includes(r)&&best.has(key)&&(r as any)[key]===best.get(key)){
+        cell.classList.add('best-metric');cell.title='Best recorded value in this filtered view. Workloads and budgets may differ; this is not an engine ranking.';
+        const badge=document.createElement('span');badge.className='best-label';badge.textContent='BEST';cell.append(badge);
+      }
+
       if (key === "engine") {
         const sub = document.createElement("small");
         sub.textContent = `${r.resolution}p · revision ${r.revision}`;
@@ -137,12 +149,17 @@ function render() {
       tr.append(cell);
     }
     const raw = document.createElement("td");
+    if(r.raw.kind==='musical-run'){
+      const reload=document.createElement('button');reload.textContent='Reload';reload.className='reload-run';reload.title='Load this run�s settings in Playback lab';
+      reload.onclick=()=>window.dispatchEvent(new CustomEvent('benchmark-reload',{detail:r.raw}));raw.append(reload);
+    }
+
     if (r.raw.file) {
       const a = document.createElement("a");
       a.textContent = "JSON ↗";
       a.href = "/benchmark-results/" + encodeURIComponent(r.raw.file);
       raw.append(a);
-    } else raw.textContent = "Imported";
+    } else raw.append(document.createTextNode(" Imported"));
     tr.append(raw);
     body.append(tr);
   }

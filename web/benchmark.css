@@ -1032,4 +1032,25 @@ input,select { font-size:12px; }
  .engines article { padding:12px; }
  .section-heading { gap:12px; }
 }
-
+/* Dense lab controls and scan-friendly recorded runs. */
+.engines article { padding:10px 14px; }
+.engines h2 { margin:5px 0 4px; }
+.engines p { white-space:nowrap; font-size:10px; }
+.engines { margin-bottom:8px; }
+.intro { padding-top:18px; padding-bottom:16px; }
+.section-heading { margin-bottom:6px; }
+.panel > p { margin:6px 0; font-size:11px; line-height:1.55; }
+.filters { margin:12px 0 8px; gap:10px; }
+.filters label { min-width:140px; }
+button,select,input,.settings select,.settings input,.transport button,.media-strip button { min-height:26px; padding:4px 8px; font-size:11px; }
+label { gap:5px; }
+.settings label { margin-bottom:10px; }
+.tabs button { padding:9px 0; }
+#results-table td,#results-table th { padding:7px 10px; font-size:11px; }
+#results-table td small { margin-top:2px; font-size:9px; }
+#results-table td.best-metric { background:#262626; box-shadow:inset 2px 0 #d4d4d4; font-weight:600; }
+.best-label { display:block; color:#a3a3a3; font:8px ui-monospace,monospace; letter-spacing:1px; margin-top:2px; }
+.reload-run { margin-right:8px; min-height:23px; padding:3px 7px; font-size:10px; }
+input[type=range],.transport input[type=range] { min-height:0; padding:0; }
+input[type=checkbox] { min-height:0; padding:0; }
+@media(max-width:680px) { .engines { grid-template-columns:1fr; } .engines p { white-space:normal; } }
