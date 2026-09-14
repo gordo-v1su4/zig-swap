@@ -956,3 +956,38 @@ input[type="file"]::file-selector-button {
 .settings summary {
   color: #c5c5c9;
 }
+/* Tailwind Neutral palette: strictly achromatic, including native controls. */
+@media screen {
+  :root { color-scheme: dark; --neutral-950:#0a0a0a; --neutral-900:#171717; --neutral-800:#262626; --neutral-700:#404040; --neutral-400:#a3a3a3; --neutral-300:#d4d4d4; --neutral-100:#f5f5f5; background:var(--neutral-950); color:var(--neutral-100); }
+  body { background:var(--neutral-950); color:var(--neutral-100); }
+  .engines,.panel,.settings,.media-strip,.transport,#comparison,.run-actions { background:var(--neutral-900); color:var(--neutral-100); border-color:var(--neutral-800); }
+  .masthead,.engines article,.tabs,.table-wrap,td,th,.settings fieldset,.settings details,.intro-note { border-color:var(--neutral-800); }
+  h1,h2,h3,.brand-mark,.settings h3,.settings legend,.media-strip strong,.prose h2,.prose h3 { color:var(--neutral-100); }
+  p,label,.note,.muted,.intro-note,.intro p,.engines p,.engines span,.eyebrow,.tiny-label,.wordmark small,.tabs button,td small,.badge,.prose,summary,#status,#results-status,footer,.settings p,.settings label,.media-strip label,.media-strip p,.media-strip .tiny-label,.settings .tiny-label,.settings summary,.transport label { color:var(--neutral-400); }
+  button,select,input,.settings select,.settings input,.media-strip input,.media-strip button,.transport button { background:var(--neutral-800); color:var(--neutral-100); border-color:var(--neutral-700); }
+  button:hover,.media-strip button:hover,.transport button:hover { background:var(--neutral-700); border-color:var(--neutral-400); }
+  .primary,.transport button.primary { background:var(--neutral-100); color:var(--neutral-950); border-color:var(--neutral-100); }
+  .primary:hover,.transport button.primary:hover { background:var(--neutral-300); color:var(--neutral-950); }
+  .tabs button { background:transparent; }
+  .tabs button[aria-pressed="true"] { color:white; border-color:white; background:transparent; }
+  .tabs span,th,.beat-strip,#decks>div,#live,#speed-readout { background:var(--neutral-900); color:var(--neutral-300); }
+  th button { background:transparent; color:inherit; }
+  tbody tr:hover,tbody tr.selected { background:var(--neutral-800); }
+  #decks { background:var(--neutral-700); }
+  .warning,.compare-warning { color:var(--neutral-300); border-color:var(--neutral-400); }
+  .media-strip input::file-selector-button { background:var(--neutral-700); color:white; }
+  input[type="checkbox"] { accent-color:white; }
+  input[type="range"],.transport input[type="range"] { background:var(--neutral-700); accent-color:white; }
+  input[type="range"]::-webkit-slider-thumb,.transport input[type="range"]::-webkit-slider-thumb { background:white; border:0; border-radius:0; width:8px; height:24px; }
+  input[type="range"]::-moz-range-thumb { background:white; border:0; border-radius:0; width:8px; height:24px; }
+  #motion-guide { background:var(--neutral-700); } #motion-marker { background:white; }
+  :focus-visible { outline-color:white!important; }
+  ::selection { background:var(--neutral-300); color:var(--neutral-950); }
+}
+@media screen {
+  #results-table td { background:transparent; color:var(--neutral-100); }
+  #results-table tbody tr { background:var(--neutral-900); }
+  #results-table tbody tr:hover,#results-table tbody tr.selected { background:var(--neutral-800); }
+  #results-table td small { color:var(--neutral-400); }
+  .wordmark small { background:var(--neutral-800); border-color:var(--neutral-700); }
+}
