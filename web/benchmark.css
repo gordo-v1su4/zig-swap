@@ -1,3 +1,4 @@
+@import "@fontsource-variable/inter/index.css";
 [hidden] {
   display: none !important;
 }
@@ -991,3 +992,44 @@ input[type="file"]::file-selector-button {
   #results-table td small { color:var(--neutral-400); }
   .wordmark small { background:var(--neutral-800); border-color:var(--neutral-700); }
 }
+
+/* Compact hierarchy, with Inter for reading and the original uppercase labels. */
+:root { font-family: "Inter Variable", "Segoe UI", sans-serif; font-optical-sizing:auto; }
+button,input,select { font-family:inherit; }
+.masthead { height:52px; }
+.wordmark { font-family:"Avenir Next Condensed","Arial Narrow",sans-serif; }
+.intro { padding:24px 0 20px; gap:48px; grid-template-columns: 2fr 1fr; align-items:center; }
+h1 { font-size:clamp(25px,2.4vw,34px); font-weight:600; line-height:1.2; letter-spacing:-1.1px; margin:0 0 10px; }
+.intro .eyebrow { margin-bottom:9px; font-size:9px; }
+.intro .lede { font-size:13px; line-height:1.65; max-width:680px; margin:0; }
+.intro-note p { font-size:12px; line-height:1.6; margin:6px 0; }
+.intro-note .muted { font-size:10px; line-height:1.5; }
+.intro-note .tiny-label { font-size:9px; }
+.engines { margin-bottom:12px; border-radius:5px; overflow:hidden; }
+.engines article { padding:13px 16px; }
+.engines span { font-size:9px; }
+.engines h2 { font-size:13px; font-weight:600; margin:7px 0 5px; }
+.engines p { font-size:11px; line-height:1.6; }
+.tabs { margin-bottom:18px; gap:24px; }
+.tabs button { padding:12px 0; font-size:12px; }
+h2 { font-size:20px; font-weight:600; letter-spacing:-.5px; }
+h3,.settings h3 { font-size:15px; font-weight:600; letter-spacing:-.25px; }
+.section-heading { margin-bottom:12px; }
+.section-heading .eyebrow { font-size:9px; margin-bottom:6px; }
+.panel { padding:20px; }
+label { font-size:11px; font-weight:500; }
+button { font-size:11px; font-weight:550; }
+input,select { font-size:12px; }
+.settings { padding:16px; }
+.settings legend { font-size:11px; }
+.media-title strong { font-size:14px; font-weight:600; }
+.media-strip { padding:13px 16px; margin-bottom:16px; }
+.prose { font-size:13px; line-height:1.85; }
+@media(max-width:680px) {
+ .intro { grid-template-columns:1fr; gap:16px; padding:20px 0 16px; }
+ .intro-note { border-left:0; padding-left:0; }
+ h1 { font-size:26px; }
+ .engines article { padding:12px; }
+ .section-heading { gap:12px; }
+}
+
