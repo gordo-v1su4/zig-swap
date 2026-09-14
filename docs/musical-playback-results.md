@@ -1,6 +1,6 @@
 # Musical playback results
 
-Generated from local raw runs. Browser/GPU submission estimates, not physical scanout. A one-minute preview is not a completed comparison suite. GPU-bank results use a larger explicit memory budget; compare that tradeoff separately.
+Historical four-run snapshot. The Results tab includes later reports and is the current inventory. Generated from local raw runs. Browser/GPU submission estimates, not physical scanout. A one-minute preview is not a completed comparison suite. GPU-bank results use a larger explicit memory budget; compare that tradeoff separately.
 
 | Backend | Decks | Resolution | Seconds | Seed | On-time cuts | Worst deck p95 | Longest excess source error | Valid |
 |---|---:|---:|---:|---:|---:|---:|---:|---|

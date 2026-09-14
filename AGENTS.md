@@ -70,6 +70,8 @@ Hands-off loop: Linear frontier → `/implement` → PR → Done. See `docs/agen
 
 ## Learned Workspace Facts
 
+- Current public app: **Frame Lab**, a TypeScript browser playback-strategy benchmark. Read `CONTEXT.md` and `docs/adr/0009-playback-strategy-benchmark.md`. Stack C/Zig notes below describe the preserved original demo.
+
 - **zig-swap** is the greenfield Stack C build (WebCodecs + WASM remap core + WebGPU); GitHub repo `gordo-v1su4/zig-swap`.
 - **webgpu-research** is the parked lab predecessor — port `timesampler` semantics and Essentia prep from there, not fftron-sync.
 - **beatsmaxxer-pro** is the best-performing finished app today (Stack A); benchmark feel/latency only, not architecture to copy.

@@ -1,5 +1,7 @@
 # Timesampler oracle fixtures
 
+> Historical experiment / original demo. Use the [current README](../../README.md) for Frame Lab. These instructions are not required for the hosted benchmark.
+
 Behavioral oracle ported from the parked lab — **do not redesign semantics here**.
 
 ## Source

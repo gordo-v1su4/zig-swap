@@ -1,5 +1,7 @@
 # Zig wins compiled-core spike (Rust archived)
 
+> Original-demo decision. The current public benchmark follows [ADR-0009](0009-playback-strategy-benchmark.md).
+
 Both Zig and Rust spike harnesses passed all 7 shared timesampler JSON fixtures (`core/fixtures/`) with 1e-9 float tolerance. Correctness parity verified locally via `bun run test:zig` and `cargo test --manifest-path core/archive/rust-spike/Cargo.toml`.
 
 **Decision:** keep **Zig 0.16+** under `core/zig/` as the compiled remap engine. Archive the Rust spike at `core/archive/rust-spike/` (reference only, not built in CI).

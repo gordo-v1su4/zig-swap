@@ -1,5 +1,7 @@
 # Handoff — Zig / performant video stack (new repo seed)
 
+> Historical experiment / original demo. Use the [current README](README.md) for Frame Lab. These instructions are not required for the hosted benchmark.
+
 **Date:** 2026-09-11  
 **Status:** `webgpu-research` lab is **parked** here. Next work starts in a **new repo** from this doc + linked research artifacts.
 

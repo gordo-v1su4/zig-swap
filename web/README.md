@@ -1,3 +1,13 @@
+# Frame Lab web application
+
+Run `bun install` and `bun run benchmark` from the repository root. Open `/benchmark` on the printed URL. The hosted static build uses `scripts/build-site.ts` and `vercel.json`.
+
+The active application is TypeScript, HTML and CSS in `src/benchmark/`: adapters, GPU texture bank, presenter, musical scheduler and results UI. It is not React or Svelte and requires no compiled core. See the [current README](../README.md) for media selection and reporting.
+
+## Preserved original demo
+
+The following describes the Zig demo under `bun run dev`, not the active benchmark. Worker types in `src/protocol.ts` are authoritative; historical snippets below are abbreviated.
+
 # Web shell (Stack C)
 
 PGM host: bun dev server, WebCodecs frame source, WebGPU present, Zig WASM remap worker.

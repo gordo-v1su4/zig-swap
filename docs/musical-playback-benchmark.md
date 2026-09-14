@@ -1,6 +1,6 @@
 # Musical multi-deck comparison
 
-Run `bun scripts/prepare-playback-benchmark.mjs` and `bun run dev`, then open `/benchmark`.
+Current startup: `bun run benchmark`, then open `/benchmark`. Included media is prepared. Sections below retain experiment history; excerpt/preparation instructions apply to earlier runs. Use the [current README](../README.md) for the public workflow.
 The preparation script reads Beatmaxxer media without modifying it. Eight 12-second H264 clips have visible deck/frame identifiers; 720p and 1080p versions use GOP48 at the source cadence. Upscaled variants are explicitly labeled in the manifest. This is a controlled media experiment, not original-file throughput.
 
 The audio is the existing 180-second `track-excerpt.mp3`, preferred by `prep/scripts/analyze-track.mjs`. The PowerShell prep wrapper derives it from the full-song WAV. The locked grid and excerpt both report 180 seconds; hashes are recorded for reproducibility. The historical analysis does not contain an input hash, so the association is supported by prep provenance and duration, not cryptographic historical proof. Soaks loop the excerpt and its timestamps together.

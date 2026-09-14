@@ -1,5 +1,7 @@
 # v0 fixture media
 
+> Optional original-fixture preparation. Frame Lab includes prepared media and supports browser-local custom audio analysis with manual BPM. Current setup requires no Essentia credentials or sibling checkout.
+
 Bundled clip + audio for the first PGM vertical slice. Prep lane analyzes these; runtime reads locked JSON only (never live analysis during PGM).
 
 ## Layout

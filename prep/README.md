@@ -1,5 +1,7 @@
 # Prep lane
 
+> Optional original-fixture preparation. Frame Lab includes prepared media and supports browser-local custom audio analysis with manual BPM. Current setup requires no Essentia credentials or sibling checkout.
+
 Offline analysis for v0 fixture media. Runtime reads locked JSON only — never live Essentia during PGM.
 
 Ported from `webgpu-research/lab/lib/essentia-studio.mjs` and `lab/scripts/analyze-track.*`.

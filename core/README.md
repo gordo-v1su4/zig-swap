@@ -1,5 +1,7 @@
 # Remap engine (compiled core)
 
+> Historical experiment / original demo. Use the [current README](../README.md) for Frame Lab. These instructions are not required for the hosted benchmark.
+
 WASM **remap engine** for Stack C: beat grid lookup, chop reducer, seek settlement.
 
 **Implementation:** `core/zig/` (Zig 0.16+, `wasm32-freestanding` target for browser worker).

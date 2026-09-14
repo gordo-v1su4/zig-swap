@@ -1,5 +1,7 @@
 # WASM worker owns remap and clock tick
 
+> Original-demo decision. The current public benchmark follows [ADR-0009](0009-playback-strategy-benchmark.md).
+
 The compiled remap engine runs in a dedicated worker. The worker owns clock tick and remap state (beat grid lookup, chop reducer, seek settlement). The main thread owns WebCodecs decode and WebGPU present.
 
 Cross-thread messages per frame carry `{ sourceTime, chopState }` (exact shape TBD at integration). Clock authority may move later if audio-authoritative sync requires it.

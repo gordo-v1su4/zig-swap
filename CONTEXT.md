@@ -1,8 +1,18 @@
-# Zig Swap — Video Platform
+# Frame Lab - current context
+
+The active public app is a TypeScript browser playback benchmark, started with `bun run benchmark`. It compares an included HTML video pool, bounded WebCodecs reuse and resident GPU textures; libmedia remains gated. The hosted static build stores measurement reports in IndexedDB. Local media is never persisted or uploaded.
+
+Included Redline assets use prepared MIDI and analysis. Custom audio uses browser-local energy detection and manual BPM. No sibling repository, Zig or Rust build is required for the benchmark. Beatmaxxer is a separate Svelte app; future integration connects playback modules to its clock and lifecycle.
+
+See [ADR-0009](docs/adr/0009-playback-strategy-benchmark.md) and the [documentation index](docs/README.md) for the current scope. The original vocabulary below applies to the preserved demo, not the active benchmark.
+
+---
+
+# Historical Zig Swap — Video Platform
 
 A performant web video platform: locked clock, time remap, GPU-resident frames, WebGPU compositor. Time Shaper is the first reference module, not the whole product.
 
-## Language
+## Original platform vocabulary
 
 **Platform**:
 The end-to-end stack from clock through present — clock, remap, frame source, WebGPU, output.

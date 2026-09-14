@@ -1,7 +1,9 @@
 # Bounded image reuse: first local measurement
 
+> Historical experiment / original demo. Use the [current README](../README.md) for Frame Lab. These instructions are not required for the hosted benchmark.
+
 Measured 2026-09-12 in the in-app browser on this Windows machine, Chromium 152.
-Run `bun run dev`, then open `/benchmark`. The comparison changes only the frame
+Run `bun run dev`, then open `/seek-benchmark`. The comparison changes only the frame
 cache setting, using the same `RemappedFrameSource`, media and WebGPU presenter.
 It bypasses the remap language deliberately to isolate frame availability.
 

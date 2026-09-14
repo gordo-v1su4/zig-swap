@@ -1,5 +1,7 @@
 # V1S-80: Time Shaper vertical slice
 
+> Historical experiment / original demo. Use the [current README](../README.md) for Frame Lab. These instructions are not required for the hosted benchmark.
+
 Run `bun run dev` and open the URL printed by the server. The fixture starts paused.
 
 1. Click **Play**. The worker advances the locked clock and interpolates the actual

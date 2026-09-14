@@ -1,5 +1,7 @@
 # Timesampler (Zig spike)
 
+> Historical experiment / original demo. Use the [current README](../../README.md) for Frame Lab. These instructions are not required for the hosted benchmark.
+
 Faithful port of `webgpu-research/lab/browser/deck-pgm/src/timesampler/` for V1S-74.
 
 Shared behavioral oracle fixtures live in `../fixtures/`.

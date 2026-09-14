@@ -1,6 +1,25 @@
 # Frame Lab
 
+[Public benchmark](https://frame-lab-gamma.vercel.app/benchmark) · [Documentation index](docs/README.md)
+
+## How the project evolved
+
+This repository began as **zig-swap**, exploring a compiled time-remapping core and comparing Zig and Rust against shared correctness fixtures. The Zig demo and archived Rust spike remain as historical experiments.
+
+The practical question became: **which playback strategy delivers the correct frame at the right time under a musical, multi-clip workload?** Decoder scheduling, keyframe spacing, prewarming, frame reuse, GPU texture residency and audio synchronization became the focus. The current benchmark compares playback strategies rather than treating language choice as a proxy for performance.
+
+This does not establish that Zig, Rust or WebAssembly are slow or unnecessary. The previews are not a universal language ranking or a completed controlled engine study. WebAssembly 2.0 and newer developments remain a separate exploratory research track, including possible future Zig/Rust/C++ compilation experiments. We intend to review new browser video technologies and similar projects, then test promising approaches under the same workload. See the [evaluation roadmap](docs/evaluation-roadmap.md).
+
 A browser playback benchmark for musical cuts, seeks, stutters, and independent speed ramps. Compare strategies using visible video output and recorded frame observations, rather than decoding a single clip as fast as possible.
+
+## Roadmap
+
+- Compare the user's M3 laptop (16 GB unified memory) with the RTX 5090 desktop (128 GB system RAM, 32 GB VRAM). These are user-reported target configurations, not completed comparative measurements. Record the exact model, OS, browser, display and power mode when testing.
+- Add hardware profiles and clearer tabs/filters for comparing runs across machines, similar to established benchmark tools. Keep browser, media, workload and memory conditions visible.
+- Test memory-aware presets and proxy media separately; a large resident-texture bank that fits the desktop may not fit a laptop's shared memory.
+- Continue browser-video and compiled WebAssembly research using the [evaluation roadmap](docs/evaluation-roadmap.md). Publish repeatable evidence before recommending an integration.
+
+This is planned work; no M3-versus-desktop trial or hardware-normalized score is available yet.
 
 ## Run locally
 

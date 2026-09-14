@@ -1,7 +1,7 @@
 # Agent continuity — zig-swap
 
 **Last updated:** 2026-09-11  
-**Read this first** for multi-session work in this repo.
+**Historical lineage reference.** Start with current `CONTEXT.md` and ADR-0009. Stack C restrictions below describe the original demo.
 
 ## Lineage
 
