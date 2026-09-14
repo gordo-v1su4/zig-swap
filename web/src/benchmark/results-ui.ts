@@ -1,3 +1,4 @@
+import {hosted,browserResults} from "./result-storage";
 import {
   summarizeRun,
   differences,
@@ -217,7 +218,7 @@ async function refresh() {
   try {
     const response = await fetch("/benchmark-results");
     if (!response.ok) throw Error("Could not load saved runs");
-    runs = await response.json();
+    runs = [...await response.json(),...(hosted?await browserResults():[])];
     $("results-status").textContent =
       `${runs.length} saved runs loaded. Results are never automatically ranked as a winner.`;
     render();

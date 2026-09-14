@@ -19,3 +19,8 @@ core/zig/zig-out/
 web/.dev/
 
 node_modules/
+
+dist/
+.vercel/
+.vercel
+.env*

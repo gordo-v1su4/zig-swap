@@ -54,3 +54,10 @@ This is an experimental playback lab, not a production migration or a universal 
 Use **Reload** beside a recorded run to restore its controls in Playback lab, then press Play. This reruns the setup with the current implementation; historical measurements remain unchanged. Included media is available immediately. Local files are never persisted: select the original videos in their original order and the original audio if needed. Playback checks their recorded fingerprints before proceeding. Reset clears the restored-media requirement for a new experiment. Custom audio is analyzed locally when selected.
 
 Subtle **BEST** marks identify the highest on-time rate and lowest cut p95, missed-cut count and preload time among completed, valid, versioned cut runs in the filtered view. They are descriptive extrema, not an overall engine winner: media, deck counts, workloads and memory budgets can differ. Legacy runs, failed probes and ramp runs are excluded from these cut highlights.
+
+
+## Hosted version and deployment
+
+The Vercel version is a static site built with `bun run scripts/build-site.ts`. No application server or media-upload endpoint is deployed. Reference results and included fixtures are static assets. New measurements are stored in IndexedDB on the visitor's browser and can be exported as JSON; selected video and audio files remain session-only. Browser storage can be cleared by the user or browser, so export important results. The local Bun server continues to save reports to the repository instead.
+
+`vercel.json` declares the build output and benchmark routes. The UI uses TypeScript, HTML and CSS with locally bundled Inter; it is not a React or Svelte app. Playback modules can be integrated behind a Svelte component lifecycle without porting their decoder or GPU logic.

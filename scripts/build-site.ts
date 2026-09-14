@@ -1,0 +1,12 @@
+import {mkdirSync,cpSync,readdirSync,readFileSync,writeFileSync,renameSync} from 'node:fs';
+const out='dist';mkdirSync(out,{recursive:true});
+const build=await Bun.build({entrypoints:['web/musical-benchmark.html'],outdir:out,target:'browser',minify:true,define:{FRAME_LAB_HOSTED:'true'}});
+if(!build.success)throw new Error(build.logs.join('\n'));
+renameSync(`${out}/musical-benchmark.html`,`${out}/index.html`);
+cpSync('prep/fixtures',`${out}/fixtures`,{recursive:true});
+cpSync('benchmark-results',`${out}/benchmark-results`,{recursive:true});
+cpSync('docs',`${out}/docs`,{recursive:true});
+cpSync('node_modules/@libmedia/avplayer/dist/umd',`${out}/libmedia`,{recursive:true});
+const runs=readdirSync('benchmark-results').filter(f=>f.endsWith('.json')).map(file=>{const {raw,schedule,...run}=JSON.parse(readFileSync(`benchmark-results/${file}`,'utf8'));return {...run,file};});
+writeFileSync(`${out}/reference-results.json`,JSON.stringify(runs));
+console.log(`Built Frame Lab with ${runs.length} reference reports.`);

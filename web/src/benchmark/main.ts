@@ -1,3 +1,4 @@
+import {hosted,saveBrowserResult} from "./result-storage";
 import { inspectLocalVideos, fingerprint, localAudioGrid } from "./local-media";
 import {
   buildSchedule,
@@ -876,6 +877,7 @@ async function persist(report: Record<string, unknown>) {
     2,
   );
   try {
+    if(hosted){await saveBrowserResult(report);window.dispatchEvent(new Event("benchmark-result-saved"));return;}
     const r = await fetch("/benchmark-results", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
